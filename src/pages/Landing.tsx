@@ -162,7 +162,7 @@ export const Landing = () => {
           
           {/* Main Title */}
           <div className="mb-12">
-            <div className="mb-6">
+            <div className="mb-6" style={{fontFamily: 'Playfair Display, serif'}}>
               <SplitText
                 text="SmartApply AI"
                 className="text-6xl md:text-8xl font-bold text-gray-800"
@@ -202,7 +202,7 @@ export const Landing = () => {
       <section id="about" className="py-20 px-4 bg-card/30 backdrop-blur-sm relative border-t border-border/20">
         <BGPattern variant="dots" mask="fade-y" size={24} fill="rgba(34, 197, 94, 0.06)" />
         <div className="max-w-7xl mx-auto relative">
-          <h2 className="text-4xl font-bold text-foreground text-center mb-16">
+          <h2 className="text-4xl font-bold text-foreground text-center mb-16" style={{fontFamily: 'Playfair Display, serif'}}>
             How It Works
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
@@ -210,7 +210,7 @@ export const Landing = () => {
               <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
                 <span className="text-3xl font-bold text-white">1</span>
               </div>
-              <h3 className="text-2xl font-bold text-foreground mb-4 group-hover:text-primary transition-colors">
+              <h3 className="text-2xl font-bold text-foreground mb-4 group-hover:text-primary transition-colors" style={{fontFamily: 'Playfair Display, serif'}}>
                 Enter Your Details
               </h3>
               <p className="text-muted-foreground">
@@ -224,7 +224,7 @@ export const Landing = () => {
               <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
                 <span className="text-3xl font-bold text-primary-foreground">2</span>
               </div>
-              <h3 className="text-2xl font-bold text-foreground mb-4 group-hover:text-primary transition-colors">
+              <h3 className="text-2xl font-bold text-foreground mb-4 group-hover:text-primary transition-colors" style={{fontFamily: 'Playfair Display, serif'}}>
                 See Your Career Path
               </h3>
               <p className="text-muted-foreground">
@@ -237,7 +237,7 @@ export const Landing = () => {
               <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
                 <span className="text-3xl font-bold text-white">3</span>
               </div>
-              <h3 className="text-2xl font-bold text-foreground mb-4 group-hover:text-primary transition-colors">
+              <h3 className="text-2xl font-bold text-foreground mb-4 group-hover:text-primary transition-colors" style={{fontFamily: 'Playfair Display, serif'}}>
                 Explore Opportunities
               </h3>
               <p className="text-muted-foreground">
@@ -257,7 +257,7 @@ export const Landing = () => {
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-accent/10 to-primary/10 border border-accent/20 px-6 py-3 rounded-full text-sm font-medium text-accent mb-8">
               🙋 FREQUENTLY ASKED QUESTIONS
             </div>
-            <h2 className="text-4xl font-bold text-foreground mb-4">
+            <h2 className="text-4xl font-bold text-foreground mb-4" style={{fontFamily: 'Playfair Display, serif'}}>
               Got Questions? We've Got Answers
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -322,31 +322,6 @@ export const Landing = () => {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="border-t border-border/20 bg-card/50 backdrop-blur-sm py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center mb-4 md:mb-0">
-              <span className="text-foreground font-bold">© 2025 SmartApply AI (demo)</span>
-            </div>
-            <div className="flex space-x-6">
-              <button 
-                onClick={() => scrollToSection('about')}
-                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-              >
-                About
-              </button>
-              <button 
-                onClick={() => scrollToSection('faq')}
-                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-              >
-                FAQ
-              </button>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };

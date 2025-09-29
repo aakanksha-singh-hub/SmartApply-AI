@@ -104,7 +104,7 @@ export const MainNavbar: React.FC = () => {
           {/* Logo */}
           <div className="flex items-center space-x-3">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">SmartApply AI</h1>
+              <h1 className="text-xl font-bold text-gray-900" style={{fontFamily: 'Playfair Display, serif'}}>SmartApply AI</h1>
               <p className="text-xs text-gray-500">AI Career Mentor</p>
             </div>
           </div>
