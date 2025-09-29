@@ -134,17 +134,17 @@ const nodeTypes: NodeTypes = {
       <Handle type="target" position={Position.Left} id="left" className="w-3 h-3 bg-blue-500 border-2 border-white" />
       <div className="flex items-center gap-2 mb-2">
         <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-        <div className="font-bold text-white text-sm">{data?.title || 'Course'}</div>
+        <div className="font-bold text-gray-900 text-sm">{data?.title || 'Course'}</div>
       </div>
-      <div className="text-xs text-gray-200 leading-relaxed">{data?.description || 'Course description'}</div>
+      <div className="text-xs text-gray-700 leading-relaxed">{data?.description || 'Course description'}</div>
       <div className="flex flex-wrap gap-2 mt-3">
         {data?.duration && (
-          <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-500/30 text-white text-xs rounded-full">
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-500/30 text-gray-900 text-xs rounded-full">
             ⏱️ {data.duration}
           </span>
         )}
         {data?.difficulty && (
-          <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-500/30 text-white text-xs rounded-full">
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-500/30 text-gray-900 text-xs rounded-full">
             📚 {data.difficulty}
           </span>
         )}
@@ -159,12 +159,12 @@ const nodeTypes: NodeTypes = {
       <Handle type="target" position={Position.Left} id="left" className="w-3 h-3 bg-purple-500 border-2 border-white" />
       <div className="flex items-center gap-2 mb-2">
         <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-        <div className="font-bold text-white text-sm">{data?.title || 'Internship'}</div>
+        <div className="font-bold text-gray-900 text-sm">{data?.title || 'Internship'}</div>
       </div>
-      <div className="text-xs text-gray-200 leading-relaxed">{data?.description || 'Internship description'}</div>
+      <div className="text-xs text-gray-700 leading-relaxed">{data?.description || 'Internship description'}</div>
       <div className="flex flex-wrap gap-2 mt-3">
         {data?.duration && (
-          <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-500/30 text-white text-xs rounded-full">
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-500/30 text-gray-900 text-xs rounded-full">
             ⏱️ {data.duration}
           </span>
         )}
@@ -179,12 +179,12 @@ const nodeTypes: NodeTypes = {
       <Handle type="target" position={Position.Left} id="left" className="w-3 h-3 bg-green-500 border-2 border-white" />
       <div className="flex items-center gap-2 mb-2">
         <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-        <div className="font-bold text-white text-sm">{data?.title || 'Job'}</div>
+        <div className="font-bold text-gray-900 text-sm">{data?.title || 'Job'}</div>
       </div>
-      <div className="text-xs text-gray-200 leading-relaxed">{data?.description || 'Job description'}</div>
+      <div className="text-xs text-gray-700 leading-relaxed">{data?.description || 'Job description'}</div>
       <div className="flex flex-wrap gap-2 mt-3">
         {data?.salary && (
-          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-500/30 text-white text-xs rounded-full">
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-500/30 text-gray-900 text-xs rounded-full">
             💰 {data.salary}
           </span>
         )}
@@ -199,9 +199,9 @@ const nodeTypes: NodeTypes = {
       <Handle type="target" position={Position.Left} id="left" className="w-3 h-3 bg-yellow-500 border-2 border-white" />
       <div className="flex items-center gap-2 mb-2">
         <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-        <div className="font-bold text-white text-sm">{data?.title || 'Company'}</div>
+        <div className="font-bold text-gray-900 text-sm">{data?.title || 'Company'}</div>
       </div>
-      <div className="text-xs text-gray-200 leading-relaxed">{data?.description || 'Company description'}</div>
+      <div className="text-xs text-gray-700 leading-relaxed">{data?.description || 'Company description'}</div>
     </div>
   ),
   skill: ({ data }) => (
@@ -212,9 +212,9 @@ const nodeTypes: NodeTypes = {
       <Handle type="target" position={Position.Left} id="left" className="w-3 h-3 bg-slate-500 border-2 border-white" />
       <div className="flex items-center gap-2 mb-2">
         <div className="w-2 h-2 bg-slate-400 rounded-full"></div>
-        <div className="font-bold text-white text-sm">{data?.title || 'Skill'}</div>
+        <div className="font-bold text-gray-900 text-sm">{data?.title || 'Skill'}</div>
       </div>
-      <div className="text-xs text-gray-200 leading-relaxed">{data?.description || 'Skill description'}</div>
+      <div className="text-xs text-gray-700 leading-relaxed">{data?.description || 'Skill description'}</div>
     </div>
   ),
 };

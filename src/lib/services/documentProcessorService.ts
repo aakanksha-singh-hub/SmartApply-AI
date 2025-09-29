@@ -1,9 +1,42 @@
 import { DocumentAnalysisResult, QuizQuestion } from '../types/learningTypes';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 // Learning Assistant Server Configuration
 const LEARNING_SERVER_URL = 'http://localhost:3002';
 
 export class DocumentProcessorService {
+  /**
+   * Extract text from PDF files using PDF.js
+   */
+  static async extractTextFromPDF(file: File): Promise<string> {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = '';
+
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ');
+        fullText += pageText + '\n';
+      }
+
+      if (!fullText.trim()) {
+        throw new Error('The PDF appears to be empty or contains no readable text. Please ensure your PDF contains text content.');
+      }
+
+      return fullText;
+    } catch (error) {
+      console.error('Error extracting text from PDF:', error);
+      throw new Error('Failed to extract text from PDF. The file might be corrupted, password-protected, or contain only images. Please try converting to text or use the "Paste Text" option.');
+    }
+  }
+
   /**
    * Extract text from various file types (PDF, DOCX, TXT)
    */
@@ -19,9 +52,7 @@ export class DocumentProcessorService {
         }
         return text;
       } else if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
-        // For now, just return a message that PDF support is coming
-        // In production, you'd implement PDF.js integration
-        throw new Error('PDF files are not yet supported. Please convert your PDF to a text file (.txt) or copy and paste the content using the "Paste Text" option.');
+        return await this.extractTextFromPDF(file);
       } else if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || fileName.endsWith('.docx')) {
         // For now, just return a message that DOCX support is coming
         throw new Error('DOCX files are not yet supported. Please save your document as a text file (.txt) or copy and paste the content using the "Paste Text" option.');

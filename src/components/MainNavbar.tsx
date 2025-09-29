@@ -37,20 +37,6 @@ const navItems: NavItem[] = [
     description: 'Discover and progress through your career journey'
   },
   {
-    id: 'generate-career-path',
-    label: 'Generate Career Path',
-    icon: Route,
-    path: '/career-path-generator',
-    description: 'Generate personalized career paths based on your profile'
-  },
-  {
-    id: 'learning-assistant',
-    label: 'Learning Assistant',
-    icon: BookOpen,
-    path: '/learning-assistant',
-    description: 'AI-powered notes, summaries, flashcards, and quizzes'
-  },
-  {
     id: 'resume',
     label: 'Resume Optimizer',
     icon: FileText,
@@ -83,16 +69,6 @@ export const MainNavbar: React.FC = () => {
         currentPath.startsWith('/learning-roadmap') || 
         currentPath.startsWith('/achievements')) {
       return 'career-discovery';
-    }
-    
-    // Handle career path generator routes
-    if (currentPath.startsWith('/career-path-generator')) {
-      return 'generate-career-path';
-    }
-    
-    // Handle learning assistant routes
-    if (currentPath.startsWith('/learning-assistant')) {
-      return 'learning-assistant';
     }
     
     // Handle resume routes
@@ -161,19 +137,11 @@ export const MainNavbar: React.FC = () => {
             })}
           </div>
 
-          {/* User Profile */}
+          {/* User Profile - Simplified */}
           <div className="flex items-center space-x-3">
-            {enhancedProfile && (
-              <div className="hidden sm:flex items-center space-x-2 text-sm">
-                <div className="text-right">
-                  <p className="font-medium text-gray-900">{enhancedProfile.name}</p>
-                  <p className="text-gray-500">Level {enhancedProfile.level}</p>
-                </div>
-                <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
-                </div>
-              </div>
-            )}
+            <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+              <User className="w-4 h-4 text-white" />
+            </div>
           </div>
         </div>
 

@@ -11,9 +11,9 @@ export const Layout: React.FC<LayoutProps> = ({
   showNavbar = true 
 }) => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {showNavbar && <MainNavbar />}
-      <main className={showNavbar ? 'pt-0' : ''}>
+      <main className="relative">
         {children}
       </main>
     </div>

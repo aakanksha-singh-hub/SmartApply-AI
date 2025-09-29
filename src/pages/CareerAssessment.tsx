@@ -1,330 +1,194 @@
-import { useState, useEffect } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CareerAssessmentForm } from '../components/CareerAssessmentForm';
 import { NBCard } from '../components/NBCard';
 import { NBButton } from '../components/NBButton';
-import { useUserStore } from '../lib/stores/userStore';
-import { AssessmentService } from '../lib/services/assessmentService';
-import { CareerAssessmentData, EnhancedUserProfile } from '../lib/types';
-import { toast } from 'sonner';
-import { ArrowLeft, CheckCircle, Clock, User } from 'lucide-react';
+import { DepartmentService, Department, Subdepartment, RelatedJob } from '../lib/services/departmentService';
+import { ArrowLeft, Briefcase, ChevronRight } from 'lucide-react';
 
 export const CareerAssessment = () => {
   const navigate = useNavigate();
-  const { profile, enhancedProfile, setEnhancedProfile } = useUserStore();
-  const [hasExistingAssessment, setHasExistingAssessment] = useState(false);
-  const [existingAssessment, setExistingAssessment] = useState<CareerAssessmentData | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [isCheckingProfile, setIsCheckingProfile] = useState(true);
+  const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
+  const [selectedSubdepartment, setSelectedSubdepartment] = useState<Subdepartment | null>(null);
+  
+  const departments = DepartmentService.getDepartments();
 
-  useEffect(() => {
-    // Add a small delay to allow store to hydrate from localStorage
-    const checkProfile = () => {
-      console.log('Checking profile:', profile); // Debug log
-      
-      if (!profile) {
-        console.log('No profile found, redirecting to details'); // Debug log
-        toast.error('Please complete your basic profile first');
-        navigate('/details');
-        return;
-      }
+  const handleDepartmentSelect = (department: Department) => {
+    setSelectedDepartment(department);
+    setSelectedSubdepartment(null);
+  };
 
-      // Check for existing assessment
-      const existing = AssessmentService.getAssessmentData();
-      if (existing) {
-        setHasExistingAssessment(true);
-        setExistingAssessment(existing);
-      } else {
-        setShowForm(true);
-      }
-      
-      setIsCheckingProfile(false);
-    };
+  const handleSubdepartmentSelect = (subdepartment: Subdepartment) => {
+    setSelectedSubdepartment(subdepartment);
+  };
 
-    // Small delay to allow store hydration
-    const timer = setTimeout(checkProfile, 100);
-    return () => clearTimeout(timer);
-  }, [profile, navigate]);
+  const handleBack = () => {
+    if (selectedSubdepartment) {
+      setSelectedSubdepartment(null);
+    } else if (selectedDepartment) {
+      setSelectedDepartment(null);
+    }
+  };
 
-  const handleAssessmentComplete = async (assessmentData: CareerAssessmentData) => {
-    console.log('Assessment completed, processing...', assessmentData);
+  const handleJobSelect = (job: RelatedJob) => {
+    // Store the selected career for later use and navigate to details page
+    localStorage.setItem('selectedCareer', JSON.stringify({
+      title: job.title,
+      description: job.description,
+      department: selectedDepartment?.name,
+      subdepartment: selectedSubdepartment?.name,
+      averageSalary: job.averageSalary,
+      keySkills: job.keySkills
+    }));
     
-    try {
-      // Save assessment data
-      console.log('Saving assessment data...');
-      AssessmentService.saveAssessmentData(assessmentData);
-
-      if (!profile) {
-        throw new Error('Profile not found');
-      }
-
-      // Create or update enhanced profile
-      console.log('Creating enhanced profile...');
-      const newEnhancedProfile: EnhancedUserProfile = {
-        ...profile,
-        careerAssessment: assessmentData,
-        careerRecommendations: [],
-        progressData: {
-          overallProgress: 0,
-          skillProgress: {},
-          milestoneProgress: {},
-          learningActivities: [],
-          lastUpdated: new Date()
-        },
-        achievements: [{
-          id: `achievement_${Date.now()}`,
-          title: 'Assessment Complete',
-          description: 'Completed your first career assessment',
-          badgeIcon: '🎯',
-          category: 'learning' as const,
-          earnedAt: new Date(),
-          experiencePoints: 100,
-          rarity: 'common' as const
-        }],
-        currentMilestones: [],
-        level: 1,
-        experiencePoints: 100,
-        badges: [],
-        streaks: {
-          currentStreak: 0,
-          longestStreak: 0,
-          lastActivityDate: new Date(),
-          streakType: 'daily',
-          streakGoal: 7
-        },
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-
-      // Save to store
-      console.log('Saving enhanced profile to store...');
-      setEnhancedProfile(newEnhancedProfile);
-
-      // Small delay to ensure store is updated
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      console.log('Navigating to career dashboard...');
-      toast.success('Career assessment completed successfully!');
-      navigate('/career-dashboard');
-    } catch (error) {
-      console.error('Error saving assessment:', error);
-      toast.error('Failed to save assessment. Please try again.');
-    }
+    navigate('/details');
   };
 
-  const handleRetakeAssessment = () => {
-    setShowForm(true);
-    setHasExistingAssessment(false);
-  };
-
-  const handleContinueWithExisting = () => {
-    if (existingAssessment && profile) {
-      // Create enhanced profile with existing assessment
-      const newEnhancedProfile: EnhancedUserProfile = enhancedProfile || {
-        ...profile,
-        careerAssessment: existingAssessment,
-        careerRecommendations: [],
-        progressData: {
-          overallProgress: 0,
-          skillProgress: {},
-          milestoneProgress: {},
-          learningActivities: [],
-          lastUpdated: new Date()
-        },
-        achievements: [],
-        currentMilestones: [],
-        level: 1,
-        experiencePoints: 0,
-        badges: [],
-        streaks: {
-          currentStreak: 0,
-          longestStreak: 0,
-          lastActivityDate: new Date(),
-          streakType: 'daily',
-          streakGoal: 7
-        },
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-
-      setEnhancedProfile(newEnhancedProfile);
-      navigate('/career-dashboard');
-    }
-  };
-
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
-  };
-
-  if (isCheckingProfile) {
+  if (selectedSubdepartment) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 relative flex items-center justify-center">
-        <NBCard className="p-8 text-center">
-          <div className="space-y-4">
-            <div className="w-8 h-8 animate-spin mx-auto border-2 border-primary border-t-transparent rounded-full"></div>
-            <p className="text-muted-foreground">Loading your profile...</p>
-          </div>
-        </NBCard>
+      <div className="min-h-screen pt-20">
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <NBCard className="p-8">
+            <button
+              onClick={handleBack}
+              className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 mb-4"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to {selectedDepartment?.name}</span>
+            </button>
+            
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">{selectedSubdepartment.name}</h1>
+            <p className="text-gray-600 text-lg mb-6">{selectedSubdepartment.description}</p>
+
+            <div className="grid gap-6">
+              {selectedSubdepartment.relatedJobs.map((job) => (
+                <div key={job.id} className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{job.title}</h3>
+                  <p className="text-gray-600 mb-4">{job.description}</p>
+                  
+                  <div className="grid md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <span className="text-green-600 font-semibold text-lg">{job.averageSalary}</span>
+                      <p className="text-sm text-gray-500">Average Salary</p>
+                    </div>
+                    <div>
+                      <span className="text-blue-600 font-semibold">{job.growthOutlook}</span>
+                      <p className="text-sm text-gray-500">Growth Outlook</p>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <h4 className="font-medium text-gray-900 mb-2">Key Skills Required</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {job.keySkills.map((skill, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm text-gray-600">Education: {job.educationLevel}</p>
+                      <p className="text-sm text-gray-600">Experience: {job.experienceLevel}</p>
+                    </div>
+                    <NBButton onClick={() => handleJobSelect(job)}>
+                      <Briefcase className="w-4 h-4 mr-2" />
+                      Choose Career
+                    </NBButton>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </NBCard>
+        </div>
       </div>
     );
   }
 
-  if (!profile) {
-    return null; // Will redirect in useEffect
+  if (selectedDepartment) {
+    return (
+      <div className="min-h-screen pt-20">
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <NBCard className="p-8">
+            <button
+              onClick={handleBack}
+              className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 mb-4"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Departments</span>
+            </button>
+            
+            <div className="text-center mb-8">
+              <div className="text-4xl mb-4">{selectedDepartment.icon}</div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{selectedDepartment.name}</h1>
+              <p className="text-gray-600 text-lg">{selectedDepartment.description}</p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {selectedDepartment.subdepartments.map((subdepartment) => (
+                <button
+                  key={subdepartment.id}
+                  onClick={() => handleSubdepartmentSelect(subdepartment)}
+                  className="text-left p-6 bg-gray-50 rounded-xl border border-gray-200 hover:shadow-lg transition-all"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-semibold text-gray-900">{subdepartment.name}</h3>
+                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                  </div>
+                  <p className="text-gray-600 mb-3">{subdepartment.description}</p>
+                  <span className="text-blue-600 text-sm">
+                    {subdepartment.relatedJobs.length} career options
+                  </span>
+                </button>
+              ))}
+            </div>
+          </NBCard>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 relative">
-      {/* Header */}
-      <header className="border-b border-pink-200/50 bg-white/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => navigate('/details')}
-                className="p-2 hover:bg-pink-100 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 text-gray-700" />
-              </button>
-              <h1 className="text-2xl font-bold text-gray-800">
-                Career Assessment
-              </h1>
-            </div>
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <User className="w-4 h-4" />
-              <span>{profile.name}</span>
-            </div>
+    <div className="min-h-screen pt-20">
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <NBCard className="p-8">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-blue-900 mb-4" style={{fontFamily: 'Playfair Display, serif'}}>
+              Career Discovery
+            </h1>
+            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+              Explore different career departments and discover opportunities that match your interests.
+            </p>
           </div>
-        </div>
-      </header>
 
-      {/* Content */}
-      <section className="py-12 px-4 relative">
-        {/* Light educational background patterns */}
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-pink-50/30 via-purple-50/30 to-blue-50/30"></div>
-          <div 
-            className="absolute inset-0 opacity-10"
-            style={{
-              backgroundImage: `
-                radial-gradient(circle at 25% 25%, #ec4899 1px, transparent 1px),
-                radial-gradient(circle at 75% 75%, #a855f7 1px, transparent 1px),
-                radial-gradient(circle at 75% 25%, #3b82f6 1px, transparent 1px),
-                radial-gradient(circle at 25% 75%, #10b981 1px, transparent 1px)
-              `,
-              backgroundSize: '120px 120px, 100px 100px, 80px 80px, 140px 140px',
-              backgroundPosition: '0 0, 40px 40px, 80px 0, 0 80px'
-            }}
-          ></div>
-        </div>
-
-        <div className="max-w-6xl mx-auto relative">
-          {!showForm && hasExistingAssessment && existingAssessment ? (
-            // Show existing assessment summary
-            <div className="max-w-2xl mx-auto">
-              <NBCard className="border-border/50 bg-card/50 backdrop-blur-sm text-center">
-                <div className="mb-6">
-                  <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                  <h2 className="text-2xl font-bold text-foreground mb-2">
-                    Assessment Already Completed
-                  </h2>
-                  <p className="text-muted-foreground">
-                    You've already completed your career assessment. You can continue with your existing results or retake the assessment.
-                  </p>
-                </div>
-
-                <div className="bg-secondary/50 rounded-lg p-4 mb-6 text-left">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                      Completed on {formatDate(existingAssessment.completedAt)}
-                    </span>
-                  </div>
-                  
-                  <div className="space-y-2 text-sm">
-                    <div>
-                      <span className="font-medium">Top Interests:</span>{' '}
-                      <span className="text-muted-foreground">
-                        {existingAssessment.interests.slice(0, 3).join(', ')}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Key Values:</span>{' '}
-                      <span className="text-muted-foreground">
-                        {existingAssessment.values.slice(0, 2).join(', ')}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Career Goals:</span>{' '}
-                      <span className="text-muted-foreground">
-                        {existingAssessment.careerGoals.slice(0, 2).join(', ')}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Timeline:</span>{' '}
-                      <span className="text-muted-foreground">
-                        {existingAssessment.timeframe}
-                      </span>
-                    </div>
+          <div className="grid md:grid-cols-2 gap-6">
+            {departments.map((department) => (
+              <button
+                key={department.id}
+                onClick={() => handleDepartmentSelect(department)}
+                className="text-left p-8 bg-gray-50 rounded-xl border border-gray-200 hover:shadow-xl transition-all"
+              >
+                <div className="flex items-center space-x-4 mb-4">
+                  <div>
+                    <h3 className="text-2xl font-semibold text-gray-900">{department.name}</h3>
+                    <p className="text-gray-600">{department.description}</p>
                   </div>
                 </div>
-
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <NBButton
-                    onClick={handleContinueWithExisting}
-                    className="flex-1 sm:flex-none"
-                  >
-                    Continue with Existing Assessment
-                  </NBButton>
-                  <NBButton
-                    variant="secondary"
-                    onClick={handleRetakeAssessment}
-                    className="flex-1 sm:flex-none"
-                  >
-                    Retake Assessment
-                  </NBButton>
+                <div className="flex items-center space-x-2 text-blue-800">
+                  <Briefcase className="w-4 h-4" />
+                  <span className="text-sm font-medium">
+                    {department.subdepartments.length} specializations
+                  </span>
                 </div>
-              </NBCard>
-            </div>
-          ) : showForm ? (
-            // Show assessment form
-            <CareerAssessmentForm
-              onComplete={handleAssessmentComplete}
-              onCancel={() => navigate('/details')}
-            />
-          ) : (
-            // Loading or initial state
-            <div className="max-w-2xl mx-auto">
-              <NBCard className="border-border/50 bg-card/50 backdrop-blur-sm text-center">
-                <h2 className="text-2xl font-bold text-foreground mb-4">
-                  Welcome to Your Career Assessment
-                </h2>
-                <p className="text-muted-foreground mb-6">
-                  This comprehensive assessment will help us understand your interests, values, work style, and career goals to provide personalized recommendations.
-                </p>
-                <div className="bg-secondary/50 rounded-lg p-4 mb-6 text-left">
-                  <h3 className="font-semibold mb-2">What to expect:</h3>
-                  <ul className="space-y-1 text-sm text-muted-foreground">
-                    <li>• 5 sections covering different aspects of your career preferences</li>
-                    <li>• Multiple choice and ranking questions</li>
-                    <li>• Approximately 10-15 minutes to complete</li>
-                    <li>• Personalized career recommendations based on your responses</li>
-                  </ul>
-                </div>
-                <NBButton onClick={() => setShowForm(true)}>
-                  Start Assessment
-                </NBButton>
-              </NBCard>
-            </div>
-          )}
-        </div>
-      </section>
+              </button>
+            ))}
+          </div>
+        </NBCard>
+      </div>
     </div>
   );
 };

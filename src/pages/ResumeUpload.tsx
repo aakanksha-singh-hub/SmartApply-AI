@@ -159,21 +159,16 @@ export const ResumeUpload: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Page Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">AI Resume Analyzer</h1>
-            <p className="text-muted-foreground">
-              Get instant feedback and ATS optimization suggestions
-            </p>
-          </div>
-        </div>
-      </div>
-
+    <div className="min-h-screen">
       {/* Content */}
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="max-w-4xl mx-auto px-4 py-24">{/* Added more top padding to account for navbar */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-foreground mb-2">AI Resume Analyzer</h1>
+          <p className="text-muted-foreground">
+            Get instant feedback and ATS optimization suggestions
+          </p>
+        </div>
+        
         {isAnalyzing ? (
           <NBCard className="p-8 text-center">
             <div className="space-y-6">

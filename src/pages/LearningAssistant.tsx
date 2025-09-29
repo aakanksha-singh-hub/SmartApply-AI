@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Upload, FileText, Brain, Zap, BookOpen, ArrowLeft, Clock, AlertCircle } from 'lucide-react';
+import { Upload, FileText, Brain, Zap, BookOpen, ArrowLeft, Clock, AlertCircle, Briefcase, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DocumentProcessorService } from '../lib/services/documentProcessorService';
 import { DocumentAnalysisResult, QuizQuestion } from '../lib/types/learningTypes';
+import { DepartmentService, Department, Subdepartment, RelatedJob } from '../lib/services/departmentService';
 
 interface StudyMaterial {
   analysis: DocumentAnalysisResult;
@@ -16,7 +17,7 @@ export const LearningAssistant: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState('');
   const [studyMaterial, setStudyMaterial] = useState<StudyMaterial | null>(null);
-  const [activeTab, setActiveTab] = useState<'summary' | 'notes' | 'quiz'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'notes' | 'careers'>('summary');
   const [textInput, setTextInput] = useState('');
   const [uploadMethod, setUploadMethod] = useState<'file' | 'text'>('file');
   const [error, setError] = useState<string | null>(null);
@@ -81,7 +82,7 @@ export const LearningAssistant: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 pt-20">
+      <div className="min-h-screen pt-20">
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="flex flex-col items-center justify-center py-20">
             <div className="relative mb-6">
@@ -103,7 +104,7 @@ export const LearningAssistant: React.FC = () => {
 
   if (!studyMaterial && !error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 pt-20">
+      <div className="min-h-screen pt-20">
         <div className="max-w-4xl mx-auto px-4 py-8">
           {/* Header */}
           <div className="mb-8">
@@ -161,7 +162,7 @@ export const LearningAssistant: React.FC = () => {
                 <div className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center hover:border-blue-400 transition-colors">
                   <input
                     type="file"
-                    accept=".txt"
+                    accept=".txt,.pdf"
                     onChange={handleFileUpload}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   />
@@ -175,7 +176,7 @@ export const LearningAssistant: React.FC = () => {
                     </div>
                     <div className="flex items-center space-x-2 text-sm text-gray-600">
                       <AlertCircle className="w-4 h-4" />
-                      <span>Currently supports TXT files only</span>
+                      <span>Supports TXT and PDF files</span>
                     </div>
                   </div>
                 </div>
@@ -213,9 +214,9 @@ export const LearningAssistant: React.FC = () => {
               description="Important concepts and terminology extraction"
             />
             <FeatureCard
-              icon={Zap}
-              title="Quiz Questions"
-              description="MCQs and short answer questions to test understanding"
+              icon={Briefcase}
+              title="Career Exploration"
+              description="Discover careers by department and specialization"
             />
           </div>
         </div>
@@ -226,7 +227,7 @@ export const LearningAssistant: React.FC = () => {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 pt-20">
+      <div className="min-h-screen pt-20">
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="mb-8">
             <button
@@ -252,9 +253,10 @@ export const LearningAssistant: React.FC = () => {
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <h3 className="font-semibold text-blue-900 mb-2">💡 Quick Solutions:</h3>
                   <ul className="text-left text-blue-800 space-y-2 text-sm">
-                    <li>• <strong>For PDF files:</strong> Copy the text content and use the "Paste Text" option</li>
+                    <li>• <strong>For PDF files:</strong> Make sure the PDF contains readable text (not just images)</li>
                     <li>• <strong>For Word documents:</strong> Save as a .txt file or copy the content</li>
                     <li>• <strong>For empty files:</strong> Make sure your file contains readable text content</li>
+                    <li>• <strong>Alternative:</strong> Copy the text content and use the "Paste Text" option</li>
                   </ul>
                 </div>
                 
@@ -276,7 +278,7 @@ export const LearningAssistant: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 pt-20">
+    <div className="min-h-screen pt-20">
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -318,7 +320,7 @@ export const LearningAssistant: React.FC = () => {
           {[
             { id: 'summary' as const, label: 'Summary', icon: FileText },
             { id: 'notes' as const, label: 'Key Points', icon: BookOpen },
-            { id: 'quiz' as const, label: 'Quiz', icon: Zap }
+            { id: 'careers' as const, label: 'Explore Careers', icon: Briefcase }
           ].map(tab => {
             const Icon = tab.icon;
             return (
@@ -346,8 +348,8 @@ export const LearningAssistant: React.FC = () => {
           {activeTab === 'notes' && studyMaterial && (
             <NotesView keyPoints={studyMaterial.analysis.keyPoints} glossary={studyMaterial.analysis.glossary} />
           )}
-          {activeTab === 'quiz' && studyMaterial && (
-            <QuizView questions={studyMaterial.quizQuestions} />
+          {activeTab === 'careers' && (
+            <CareerExplorer />
           )}
         </div>
       </div>
@@ -427,6 +429,168 @@ const NotesView: React.FC<{ keyPoints: string[], glossary: Array<{ term: string;
     )}
   </div>
 );
+
+const CareerExplorer: React.FC = () => {
+  const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
+  const [selectedSubdepartment, setSelectedSubdepartment] = useState<Subdepartment | null>(null);
+  
+  const departments = DepartmentService.getDepartments();
+
+  const handleDepartmentSelect = (department: Department) => {
+    setSelectedDepartment(department);
+    setSelectedSubdepartment(null);
+  };
+
+  const handleSubdepartmentSelect = (subdepartment: Subdepartment) => {
+    setSelectedSubdepartment(subdepartment);
+  };
+
+  const handleBack = () => {
+    if (selectedSubdepartment) {
+      setSelectedSubdepartment(null);
+    } else if (selectedDepartment) {
+      setSelectedDepartment(null);
+    }
+  };
+
+  // Show job details
+  if (selectedSubdepartment) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <button
+              onClick={handleBack}
+              className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 mb-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to {selectedDepartment?.name}</span>
+            </button>
+            <h2 className="text-2xl font-bold text-gray-900">{selectedSubdepartment.name}</h2>
+            <p className="text-gray-600">{selectedSubdepartment.description}</p>
+          </div>
+        </div>
+
+        <div className="grid gap-6">
+          {selectedSubdepartment.relatedJobs.map((job) => (
+            <div key={job.id} className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{job.title}</h3>
+                  <p className="text-gray-600 mb-3">{job.description}</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-lg font-semibold text-green-600">{job.averageSalary}</div>
+                  <div className="text-sm text-gray-500">Average Salary</div>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">Growth Outlook</h4>
+                  <p className="text-sm text-gray-600">{job.growthOutlook}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">Education Level</h4>
+                  <p className="text-sm text-gray-600">{job.educationLevel}</p>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <h4 className="font-medium text-gray-900 mb-2">Key Skills</h4>
+                <div className="flex flex-wrap gap-2">
+                  {job.keySkills.map((skill, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="text-sm text-gray-500">
+                Experience Level: {job.experienceLevel}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Show subdepartments
+  if (selectedDepartment) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <button
+            onClick={handleBack}
+            className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 mb-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Departments</span>
+          </button>
+          <h2 className="text-2xl font-bold text-gray-900">{selectedDepartment.name}</h2>
+          <p className="text-gray-600">{selectedDepartment.description}</p>
+        </div>
+
+        <div className="grid gap-4">
+          {selectedDepartment.subdepartments.map((subdepartment) => (
+            <button
+              key={subdepartment.id}
+              onClick={() => handleSubdepartmentSelect(subdepartment)}
+              className="text-left p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-1">{subdepartment.name}</h3>
+                  <p className="text-gray-600 text-sm">{subdepartment.description}</p>
+                  <p className="text-blue-600 text-sm mt-2">
+                    {subdepartment.relatedJobs.length} related jobs
+                  </p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400" />
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Show departments
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Explore Career Departments</h2>
+        <p className="text-gray-600">Choose a department to discover career opportunities and related jobs</p>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        {departments.map((department) => (
+          <button
+            key={department.id}
+            onClick={() => handleDepartmentSelect(department)}
+            className="text-left p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200 hover:shadow-md transition-all"
+          >
+            <div className="flex items-center space-x-4">
+              <div className="text-3xl">{department.icon}</div>
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1">{department.name}</h3>
+                <p className="text-gray-600 text-sm">{department.description}</p>
+                <p className="text-blue-600 text-sm mt-2">
+                  {department.subdepartments.length} specializations
+                </p>
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const QuizView: React.FC<{ questions: QuizQuestion[] }> = ({ questions }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);

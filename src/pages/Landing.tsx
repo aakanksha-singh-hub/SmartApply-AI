@@ -28,15 +28,7 @@ export const Landing = () => {
   };
 
   return (
-    <div 
-      className="min-h-screen light-rays-bg"
-      style={{
-        backgroundImage: "url('/bg-image.svg')",
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }}
-    >
+    <div className="min-h-screen light-rays-bg">
       <style>{`
         .custom-button {
           width: 200px;
@@ -186,20 +178,17 @@ export const Landing = () => {
                 onLetterAnimationComplete={handleAnimationComplete}
               />
             </div>
-            <p className="text-2xl md:text-3xl text-gray-600 font-light mb-8">
+            <p className="text-2xl md:text-3xl text-gray-600 font-light mb-8" style={{fontFamily: 'Playfair Display, serif'}}>
               Your AI-Powered Career Mentor
             </p>
-            <h2 className="text-3xl md:text-5xl font-bold text-foreground leading-tight">
-              Map your future, one skill at a time
-            </h2>
           </div>
-          <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
             Get personalized career advice powered by AI. Upload your resume for automatic 
             skill extraction, visualize your career path, discover new opportunities, and 
             bridge skill gaps with our interactive flowchart.
           </p>
           <div className="flex justify-center">
-            <Link to="/details">
+            <Link to="/assessment">
               <button className="custom-button">
                 <span className="button-span"></span>
                 <div className="button-text"></div>
@@ -338,10 +327,7 @@ export const Landing = () => {
       <footer className="border-t border-border/20 bg-card/50 backdrop-blur-sm py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <div className="w-6 h-6 bg-accent rounded-lg flex items-center justify-center">
-                <Target className="w-4 h-4 text-accent-foreground" />
-              </div>
+            <div className="flex items-center mb-4 md:mb-0">
               <span className="text-foreground font-bold">© 2025 SmartApply AI (demo)</span>
             </div>
             <div className="flex space-x-6">

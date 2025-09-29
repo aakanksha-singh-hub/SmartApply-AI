@@ -7,6 +7,14 @@ export interface UserProfile {
   careerInterest: string;
   location?: string;
   resume?: ResumeData;
+  selectedCareer?: {
+    title: string;
+    description: string;
+    department?: string;
+    subdepartment?: string;
+    averageSalary?: string;
+    keySkills?: string[];
+  };
 }
 
 // Enhanced User Profile for Career Mentor

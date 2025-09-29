@@ -21,7 +21,9 @@ import {
   Settings,
   Download,
   BookOpen,
-  Activity
+  Activity,
+  GitBranch,
+  HelpCircle
 } from 'lucide-react';
 
 export const CareerDashboard = () => {
@@ -143,7 +145,7 @@ export const CareerDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
+    <div className="min-h-screen">
       <DotBackground>
         <></>
       </DotBackground>
@@ -165,6 +167,14 @@ export const CareerDashboard = () => {
           
           <div className="flex gap-3 mt-4 md:mt-0">
             <NBButton 
+              variant="primary"
+              onClick={() => navigate('/career-path-generator')}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none hover:from-purple-600 hover:to-pink-600"
+            >
+              <GitBranch className="h-4 w-4 mr-2" />
+              Build Personalised Career Roadmap
+            </NBButton>
+            <NBButton 
               variant="ghost"
               onClick={refreshRecommendations}
               disabled={isLoading}
@@ -175,6 +185,21 @@ export const CareerDashboard = () => {
             <NBButton onClick={() => navigate('/achievements')}>
               <Target className="h-4 w-4 mr-2" />
               Achievements
+            </NBButton>
+          </div>
+        </div>
+
+        {/* Confused About Career Section */}
+        <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200">
+          <div className="text-center">
+            <HelpCircle className="h-8 w-8 mx-auto mb-3 text-blue-500" />
+            <p className="text-sm text-gray-600 mb-4">Confused about your career?</p>
+            <NBButton 
+              variant="primary"
+              onClick={() => navigate('/assessment')}
+              className="bg-blue-500 text-white border-none hover:bg-blue-600"
+            >
+              Take Career Assessment
             </NBButton>
           </div>
         </div>

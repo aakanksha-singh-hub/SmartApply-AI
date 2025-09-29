@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useUserStore } from '../lib/stores/userStore';
 import { ResumeSummary } from '../components/resume/ResumeSummary';
 import { ATSScore } from '../components/resume/ATSScore';
 import { DetailedFeedback } from '../components/resume/DetailedFeedback';
+import { ResumeOptimizerService } from '../lib/services/resumeOptimizerService';
 import { NBButton } from '../components/NBButton';
 import { NBCard } from '../components/NBCard';
-import { ArrowLeft, Download, FileText, Building, Briefcase } from 'lucide-react';
+import { ArrowLeft, Download, FileText, Building, Briefcase, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { EnhancedResumeVersion } from '../lib/types';
 
@@ -14,6 +15,7 @@ export const ResumeAnalysisResults: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { enhancedProfile } = useUserStore();
+  const [isGeneratingOptimized, setIsGeneratingOptimized] = useState(false);
 
   // Find the resume analysis
   const resumeAnalysis = enhancedProfile?.resumeVersions?.find(
@@ -70,6 +72,40 @@ export const ResumeAnalysisResults: React.FC = () => {
     }
   };
 
+  const handleDownloadOptimizedResume = async () => {
+    if (!resumeAnalysis.feedback) {
+      toast.error('No feedback available to optimize resume');
+      return;
+    }
+
+    setIsGeneratingOptimized(true);
+    try {
+      toast.loading('Generating optimized resume...', { id: 'optimize' });
+      
+      // Generate optimized resume content
+      const optimizedContent = await ResumeOptimizerService.generateOptimizedResume(
+        'Original resume content', // In a real app, you'd have the original content
+        resumeAnalysis.feedback,
+        resumeAnalysis.companyName || 'Target Company',
+        resumeAnalysis.jobTitle || 'Target Position'
+      );
+
+      // Download the optimized resume
+      ResumeOptimizerService.downloadOptimizedResume(
+        optimizedContent,
+        resumeAnalysis.companyName || 'Target_Company',
+        resumeAnalysis.jobTitle || 'Target_Position'
+      );
+
+      toast.success('Optimized resume downloaded successfully!', { id: 'optimize' });
+    } catch (error) {
+      console.error('Error generating optimized resume:', error);
+      toast.error('Failed to generate optimized resume. Please try again.', { id: 'optimize' });
+    } finally {
+      setIsGeneratingOptimized(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Page Header */}
@@ -93,14 +129,24 @@ export const ResumeAnalysisResults: React.FC = () => {
                 )}
               </div>
             </div>
-            <NBButton
-              variant="secondary"
-              onClick={handleDownloadResume}
-              className="flex items-center space-x-2"
-            >
-              <Download className="w-4 h-4" />
-              <span>Download Resume</span>
-            </NBButton>
+            <div className="flex gap-3">
+              <NBButton
+                onClick={handleDownloadOptimizedResume}
+                disabled={isGeneratingOptimized}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none hover:from-purple-600 hover:to-pink-600 flex items-center space-x-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>{isGeneratingOptimized ? 'Generating...' : 'Download Optimized Resume'}</span>
+              </NBButton>
+              <NBButton
+                variant="secondary"
+                onClick={handleDownloadResume}
+                className="flex items-center space-x-2"
+              >
+                <Download className="w-4 h-4" />
+                <span>Download Original</span>
+              </NBButton>
+            </div>
           </div>
         </div>
       </div>
