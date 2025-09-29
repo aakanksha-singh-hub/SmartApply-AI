@@ -38,7 +38,7 @@ export function Header({
 
           <div className="relative px-6 py-6">
             <div className="flex items-center justify-between">
-              {/* EduNavigator Logo */}
+              {/* SmartApply AI Logo */}
               <div
                 className="flex items-center space-x-3 cursor-pointer group"
                 onClick={onBackToHome}
@@ -47,7 +47,7 @@ export function Header({
                   <BookOpen className="h-5 w-5 text-white" />
                 </div>
                 <span className="text-xl font-bold text-gray-800 tracking-tight group-hover:text-purple-600 transition-colors">
-                  EduNavigator
+                  SmartApply AI
                 </span>
               </div>
 

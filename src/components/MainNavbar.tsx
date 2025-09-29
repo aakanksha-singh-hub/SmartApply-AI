@@ -127,11 +127,8 @@ export const MainNavbar: React.FC = () => {
             <div className="flex items-center justify-between h-12">
           {/* Logo */}
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">EN</span>
-            </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">EduNavigator</h1>
+              <h1 className="text-xl font-bold text-gray-900">SmartApply AI</h1>
               <p className="text-xs text-gray-500">AI Career Mentor</p>
             </div>
           </div>

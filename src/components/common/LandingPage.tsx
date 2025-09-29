@@ -132,12 +132,12 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
 
   const faqs: FAQ[] = [
     {
-      question: "Who can use EduNavigator?",
-      answer: "Any student looking to discover careers, build skills, or prepare for job applications can benefit from EduNavigator.",
+      question: "Who can use SmartApply AI?",
+      answer: "Any student looking to discover careers, build skills, or prepare for job applications can benefit from SmartApply AI.",
     },
     {
       question: "Does it cost anything?",
-      answer: "EduNavigator offers a free basic version with key features; advanced career insights and resume optimization may be premium.",
+      answer: "SmartApply AI offers a free basic version with key features; advanced career insights and resume optimization may be premium.",
     },
     {
       question: "Can I upload notes in regional languages?",
@@ -149,7 +149,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
     },
     {
       question: "Do I need prior experience to use the platform?",
-      answer: "No. EduNavigator is designed for students at any stage – beginner, intermediate, or advanced.",
+      answer: "No. SmartApply AI is designed for students at any stage – beginner, intermediate, or advanced.",
     },
     {
       question: "Is my data secure?",
@@ -175,7 +175,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
             <div className="space-y-4">
               <h1 className="text-5xl md:text-7xl font-bold text-gray-800 leading-tight">
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600">
-                  EduNavigator
+                  SmartApply AI
                 </span>
               </h1>
               <p className="text-xl md:text-2xl text-gray-700 font-medium">
@@ -246,7 +246,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
             <div className="relative z-10">
               <div className="text-center">
                 <div className="inline-flex items-center gap-2 bg-white/90 text-purple-700 px-6 py-3 rounded-full text-sm font-semibold mb-8">
-                  ABOUT EDUNAVIGATOR
+                  ABOUT SMARTAPPLY AI
                 </div>
                 <h2
                   className={`text-4xl md:text-5xl font-bold text-white mb-8 transition-all duration-1000 delay-300 ${
@@ -255,7 +255,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                       : "opacity-0 translate-y-10"
                   }`}
                 >
-                  About EduNavigator
+                  About SmartApply AI
                 </h2>
                 <p
                   className={`text-xl text-white/90 max-w-4xl mx-auto leading-relaxed transition-all duration-1000 delay-500 ${
@@ -264,7 +264,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                       : "opacity-0 translate-y-10"
                   }`}
                 >
-                  EduNavigator is an AI-driven education platform designed to empower students with personalized career guidance, skill-building roadmaps, and job readiness tools. By combining Generative AI, resume optimization, and learning support, EduNavigator ensures students are prepared for the ever-evolving job market while making learning efficient, engaging, and goal-oriented.
+                  SmartApply AI is an AI-driven education platform designed to empower students with personalized career guidance, skill-building roadmaps, and job readiness tools. By combining Generative AI, resume optimization, and learning support, SmartApply AI ensures students are prepared for the ever-evolving job market while making learning efficient, engaging, and goal-oriented.
                 </p>
               </div>
             </div>
@@ -293,7 +293,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               WHAT WE DO
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-6">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">EduNavigator</span> helps students
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">SmartApply AI</span> helps students
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Comprehensive support for every step of your educational and career journey
@@ -375,7 +375,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               Common questions
             </h2>
             <p className="text-lg text-gray-600">
-              Find answers to frequently asked questions about EduNavigator
+              Find answers to frequently asked questions about SmartApply AI
             </p>
           </div>
 
@@ -430,7 +430,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 </span>
               </h2>
               <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-                Join thousands of students who are already building their future with EduNavigator's AI-powered guidance
+                Join thousands of students who are already building their future with SmartApply AI's AI-powered guidance
               </p>
               <Button
                 onClick={onGetStarted}
@@ -453,14 +453,14 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-500 rounded-xl flex items-center justify-center">
                 <BookOpen className="h-6 w-6 text-white" />
               </div>
-              <span className="text-2xl font-bold text-gray-800">EduNavigator</span>
+              <span className="text-2xl font-bold text-gray-800">SmartApply AI</span>
             </div>
             <p className="text-lg font-medium text-gray-600">
               Empowering Students, Enabling Careers
             </p>
             <div className="border-t border-gray-300 pt-6">
               <p className="text-gray-500">
-                © 2025 EduNavigator. All Rights Reserved.
+                © 2025 SmartApply AI. All Rights Reserved.
               </p>
             </div>
           </div>

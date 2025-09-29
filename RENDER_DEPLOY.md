@@ -23,7 +23,7 @@
    - Connect your GitHub repo
    - Set `GEMINI_API_KEY` environment variable
 
-4. **Done!** 🎉 Your EduNavigator will be live in ~5 minutes
+4. **Done!** 🎉 Your SmartApply AI will be live in ~5 minutes
 
 ## 📖 Full Guide:
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions.
