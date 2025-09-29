@@ -4,12 +4,27 @@ import { NBButton } from '../components/NBButton';
 import { BGPattern } from '../components/ui/bg-pattern';
 import { ArrowRight, Target, Map, Zap, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
+import SplitText from '../components/SplitText';
 
 export const Landing = () => {
   const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
 
   const toggleFAQ = (index: number) => {
     setExpandedFAQ(expandedFAQ === index ? null : index);
+  };
+
+  const handleAnimationComplete = () => {
+    console.log('SmartApply AI animation complete!');
+  };
+
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
   };
 
   return (
@@ -22,7 +37,7 @@ export const Landing = () => {
         backgroundRepeat: 'no-repeat'
       }}
     >
-      <style jsx>{`
+      <style>{`
         .custom-button {
           width: 200px;
           height: 60px;
@@ -155,9 +170,22 @@ export const Landing = () => {
           
           {/* Main Title */}
           <div className="mb-12">
-            <h1 className="text-6xl md:text-8xl font-bold text-gray-800 mb-6">
-              SmartApply AI
-            </h1>
+            <div className="mb-6">
+              <SplitText
+                text="SmartApply AI"
+                className="text-6xl md:text-8xl font-bold text-gray-800"
+                delay={100}
+                duration={0.6}
+                ease="power3.out"
+                splitType="chars"
+                from={{ opacity: 0, y: 40 }}
+                to={{ opacity: 1, y: 0 }}
+                threshold={0.1}
+                rootMargin="-100px"
+                textAlign="center"
+                onLetterAnimationComplete={handleAnimationComplete}
+              />
+            </div>
             <p className="text-2xl md:text-3xl text-gray-600 font-light mb-8">
               Your AI-Powered Career Mentor
             </p>
@@ -182,7 +210,7 @@ export const Landing = () => {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 px-4 bg-card/30 backdrop-blur-sm relative border-t border-border/20">
+      <section id="about" className="py-20 px-4 bg-card/30 backdrop-blur-sm relative border-t border-border/20">
         <BGPattern variant="dots" mask="fade-y" size={24} fill="rgba(34, 197, 94, 0.06)" />
         <div className="max-w-7xl mx-auto relative">
           <h2 className="text-4xl font-bold text-foreground text-center mb-16">
@@ -233,7 +261,7 @@ export const Landing = () => {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 px-4 relative">
+      <section id="faq" className="py-20 px-4 relative">
         <BGPattern variant="grid" mask="fade-center" size={32} fill="rgba(139, 92, 246, 0.05)" />
         <div className="max-w-7xl mx-auto relative">
           <div className="text-center mb-16">
@@ -317,12 +345,18 @@ export const Landing = () => {
               <span className="text-foreground font-bold">© 2025 SmartApply AI (demo)</span>
             </div>
             <div className="flex space-x-6">
-              <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
+              <button 
+                onClick={() => scrollToSection('about')}
+                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
                 About
-              </Link>
-              <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
+              </button>
+              <button 
+                onClick={() => scrollToSection('faq')}
+                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
                 FAQ
-              </Link>
+              </button>
             </div>
           </div>
         </div>
