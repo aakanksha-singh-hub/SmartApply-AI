@@ -192,28 +192,6 @@ export const ResumeAnalysisResults: React.FC = () => {
 
             {/* Detailed Feedback */}
             <DetailedFeedback feedback={resumeAnalysis.feedback} />
-
-            {/* Action Buttons */}
-            <NBCard className="p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Next Steps</h3>
-              <div className="flex flex-wrap gap-3">
-                <NBButton onClick={() => navigate('/resume-upload')}>
-                  Analyze Another Resume
-                </NBButton>
-                <NBButton 
-                  variant="secondary"
-                  onClick={() => navigate('/learning-roadmap')}
-                >
-                  View Learning Roadmap
-                </NBButton>
-                <NBButton 
-                  variant="secondary"
-                  onClick={() => navigate('/achievements')}
-                >
-                  View Achievements
-                </NBButton>
-              </div>
-            </NBCard>
           </div>
         </div>
       </main>

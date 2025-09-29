@@ -133,14 +133,19 @@ export const ResumeUpload: React.FC = () => {
       resumeAnalysis.status = 'completed';
 
       // Update user profile with resume analysis
-      if (enhancedProfile) {
-        const updatedProfile = {
-          ...enhancedProfile,
-          resumeVersions: [...(enhancedProfile.resumeVersions || []), resumeAnalysis],
-          updatedAt: new Date()
-        };
-        setEnhancedProfile(updatedProfile);
-      }
+      const currentProfile = enhancedProfile || {
+        id: `profile_${Date.now()}`,
+        resumeVersions: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      const updatedProfile = {
+        ...currentProfile,
+        resumeVersions: [...(currentProfile.resumeVersions || []), resumeAnalysis],
+        updatedAt: new Date()
+      };
+      setEnhancedProfile(updatedProfile);
 
       setStatusText('Analysis complete! Redirecting...');
       toast.success('Resume analysis completed successfully!');

@@ -396,7 +396,7 @@ export interface AlternativeCareer {
   matchScore: number;
   salary: string;
   requirements: string[];
-  growth: 'high' | 'medium' | 'low';
+  growth: 'very high' | 'high' | 'medium' | 'low';
 }
 
 // Career Service Response Types
