@@ -726,11 +726,11 @@ export class GamificationService {
     progressToNextLevel: number;
   } {
     const level = this.calculateLevel(profile.experiencePoints);
-    const recentAchievements = profile.achievements
+    const recentAchievements = (profile.achievements || [])
       .sort((a, b) => b.earnedAt.getTime() - a.earnedAt.getTime())
       .slice(0, 5);
     
-    const nextMilestone = profile.currentMilestones
+    const nextMilestone = (profile.currentMilestones || [])
       .filter(m => !m.isCompleted)
       .sort((a, b) => a.order - b.order)[0];
     

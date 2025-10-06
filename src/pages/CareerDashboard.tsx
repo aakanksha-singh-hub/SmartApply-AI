@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CareerRecommendationsList } from '../components/CareerRecommendationsList';
 import { ProgressDashboard } from '../components/ProgressDashboard';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { GridBackgroundSmall } from '../components/ui/grid-background';
 import { DotBackground } from '../components/ui/dot-background';
 import { NBCard } from '../components/NBCard';
@@ -261,7 +262,14 @@ export const CareerDashboard = () => {
           <div>
             <NBCard className="p-6">
               <h2 className="text-xl font-semibold mb-4">Your Progress</h2>
-              <ProgressDashboard />
+              <ErrorBoundary fallback={
+                <div className="text-center py-8 text-gray-500">
+                  <p>Unable to load progress dashboard</p>
+                  <p className="text-sm">Please try refreshing the page</p>
+                </div>
+              }>
+                <ProgressDashboard />
+              </ErrorBoundary>
               
               <div className="mt-6 space-y-3">
                 <NBButton 
