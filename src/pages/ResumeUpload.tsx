@@ -11,14 +11,14 @@ import { EnhancedResumeVersion } from '../lib/types';
 export const ResumeUpload: React.FC = () => {
   const navigate = useNavigate();
   const { enhancedProfile, setEnhancedProfile } = useUserStore();
-  
+
   const [file, setFile] = useState<File | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [statusText, setStatusText] = useState('');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     if (!file) {
       toast.error('Please select a resume file');
       return;
@@ -63,10 +63,10 @@ export const ResumeUpload: React.FC = () => {
       };
 
       setStatusText('Analyzing resume content...');
-      
+
       // Simulate AI analysis (replace with actual AI service call)
       await new Promise(resolve => setTimeout(resolve, 3000));
-      
+
       // Mock feedback (replace with actual AI analysis)
       const mockFeedback = {
         overallScore: Math.floor(Math.random() * 30) + 70, // 70-100
@@ -80,50 +80,50 @@ export const ResumeUpload: React.FC = () => {
         toneAndStyle: {
           score: Math.floor(Math.random() * 25) + 70,
           tips: [
-            { 
-              type: "good" as const, 
-              tip: "Professional tone maintained", 
-              explanation: "Your resume maintains a professional and confident tone throughout." 
+            {
+              type: "good" as const,
+              tip: "Professional tone maintained",
+              explanation: "Your resume maintains a professional and confident tone throughout."
             },
-            { 
-              type: "improve" as const, 
-              tip: "Use stronger action verbs", 
-              explanation: "Replace weak verbs like 'responsible for' with stronger alternatives like 'managed', 'led', or 'implemented'." 
+            {
+              type: "improve" as const,
+              tip: "Use stronger action verbs",
+              explanation: "Replace weak verbs like 'responsible for' with stronger alternatives like 'managed', 'led', or 'implemented'."
             }
           ]
         },
         content: {
           score: Math.floor(Math.random() * 25) + 65,
           tips: [
-            { 
-              type: "good" as const, 
-              tip: "Relevant experience highlighted", 
-              explanation: "Your work experience aligns well with the target role." 
+            {
+              type: "good" as const,
+              tip: "Relevant experience highlighted",
+              explanation: "Your work experience aligns well with the target role."
             },
-            { 
-              type: "improve" as const, 
-              tip: "Add more quantified results", 
-              explanation: "Include specific numbers, percentages, or metrics to demonstrate your impact." 
+            {
+              type: "improve" as const,
+              tip: "Add more quantified results",
+              explanation: "Include specific numbers, percentages, or metrics to demonstrate your impact."
             }
           ]
         },
         structure: {
           score: Math.floor(Math.random() * 20) + 75,
           tips: [
-            { 
-              type: "good" as const, 
-              tip: "Clear section organization", 
-              explanation: "Your resume sections are well-organized and easy to follow." 
+            {
+              type: "good" as const,
+              tip: "Clear section organization",
+              explanation: "Your resume sections are well-organized and easy to follow."
             }
           ]
         },
         skills: {
           score: Math.floor(Math.random() * 25) + 70,
           tips: [
-            { 
-              type: "improve" as const, 
-              tip: "Include more technical skills", 
-              explanation: "Add specific technical skills mentioned in the job description." 
+            {
+              type: "improve" as const,
+              tip: "Include more technical skills",
+              explanation: "Add specific technical skills mentioned in the job description."
             }
           ]
         }
@@ -139,17 +139,19 @@ export const ResumeUpload: React.FC = () => {
         createdAt: new Date(),
         updatedAt: new Date()
       };
-      
+
       const updatedProfile = {
         ...currentProfile,
         resumeVersions: [...(currentProfile.resumeVersions || []), resumeAnalysis],
         updatedAt: new Date()
       };
-      setEnhancedProfile(updatedProfile);
+      // ensure the object matches EnhancedUserProfile shape
+      const { ensureEnhancedProfile } = await import('../lib/utils/profileHelpers')
+      setEnhancedProfile(ensureEnhancedProfile(updatedProfile));
 
       setStatusText('Analysis complete! Redirecting...');
       toast.success('Resume analysis completed successfully!');
-      
+
       // Navigate to results page
       setTimeout(() => {
         navigate(`/resume-analysis/${analysisId}`);
@@ -173,7 +175,7 @@ export const ResumeUpload: React.FC = () => {
             Get instant feedback and ATS optimization suggestions
           </p>
         </div>
-        
+
         {isAnalyzing ? (
           <NBCard className="p-8 text-center">
             <div className="space-y-6">
@@ -196,7 +198,7 @@ export const ResumeUpload: React.FC = () => {
                 Upload Your Resume for Analysis
               </h2>
               <p className="text-muted-foreground">
-                Get AI-powered feedback on your resume's ATS compatibility, content quality, 
+                Get AI-powered feedback on your resume's ATS compatibility, content quality,
                 and optimization suggestions tailored to your target job.
               </p>
             </div>

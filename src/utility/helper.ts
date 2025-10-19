@@ -45,7 +45,12 @@ export const getcookie = (key: string) => {
 //get data from localstorage
 export const isAuth = () => {
   if (window) {
-    return JSON.parse(localStorage.getItem('user') ?? '') ? true : false
+    try {
+      const user = localStorage.getItem('user')
+      return !!(user && JSON.parse(user))
+    } catch (err) {
+      return false
+    }
   }
 }
 
@@ -60,10 +65,31 @@ export const getLocalNotification = () => {
 }
 //store token and user data in storage
 export const authenticate = (response: { data: string }) => {
-  setLocalStorage('user', response.data)
+  // response should include { user, token }
+  if (response && (response as any).token) {
+    setLocalStorage('jwt', (response as any).token)
+  }
+  if (response && (response as any).user) {
+    setLocalStorage('user', JSON.stringify((response as any).user))
+  }
 
-  const expirationDate = new Date(
-    new Date().getTime() + 60 * 60 * 24 * 10 * 1000
-  )
+  const expirationDate = new Date(new Date().getTime() + 60 * 60 * 24 * 10 * 1000)
   setLocalStorage('expirationDate', expirationDate.toDateString())
+}
+
+export const getToken = () => {
+  try {
+    return JSON.parse(localStorage.getItem('jwt') ?? 'null') ?? localStorage.getItem('jwt')
+  } catch (err) {
+    return localStorage.getItem('jwt')
+  }
+}
+
+export const getUser = () => {
+  try {
+    const u = localStorage.getItem('user')
+    return u ? JSON.parse(u) : null
+  } catch (err) {
+    return null
+  }
 }
