@@ -19,7 +19,25 @@ const SignIn: React.FC = () => {
         try {
             const res = await axios.post('/auth/login', { username, password })
             authenticate({ ...(res.data), token: res.data.token, data: res.data.user })
-            navigate('/')
+            
+            // Small delay to ensure localStorage is updated
+            setTimeout(() => {
+                // Check if user has completed assessment
+                const storedProfile = localStorage.getItem('career-mentor-store')
+                if (storedProfile) {
+                    try {
+                        const parsed = JSON.parse(storedProfile)
+                        const hasProfile = parsed && parsed.enhancedProfile
+                        
+                        // Redirect based on profile status
+                        navigate(hasProfile ? '/dashboard' : '/assessment')
+                    } catch (e) {
+                        navigate('/assessment')
+                    }
+                } else {
+                    navigate('/assessment')
+                }
+            }, 100)
         } catch (err: any) {
             console.error(err)
             if (err.response?.status === 401) {

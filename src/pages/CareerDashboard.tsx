@@ -36,8 +36,17 @@ export const CareerDashboard = () => {
   const [selectedCareerId, setSelectedCareerId] = useState<string | undefined>();
 
   useEffect(() => {
+    // If no enhanced profile but user is logged in, redirect to assessment
     if (!enhancedProfile) {
-      navigate('/career-assessment');
+      const token = localStorage.getItem('jwt');
+      if (token) {
+        // User is logged in but hasn't completed assessment
+        toast.info('Please complete your career assessment first');
+        navigate('/assessment');
+      } else {
+        // User not logged in
+        navigate('/signin');
+      }
       return;
     }
 

@@ -6,10 +6,13 @@ import {
   User,
   Home,
   Route,
-  BookOpen
+  BookOpen,
+  LogIn,
+  LogOut
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useUserStore } from '../lib/stores/userStore';
+import { getToken } from '../utility/helper';
 
 interface NavItem {
   id: string;
@@ -49,6 +52,25 @@ export const MainNavbar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { enhancedProfile } = useUserStore();
+  
+  // Check if user is logged in
+  const isLoggedIn = !!getToken();
+
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate('/signin');
+    window.location.reload();
+  };
+
+  const handleProfileClick = () => {
+    if (isLoggedIn) {
+      // Logged in users go to dashboard
+      navigate('/dashboard');
+    } else {
+      // Non-logged in users go to sign in
+      navigate('/signin');
+    }
+  };
 
   const getCareerDiscoveryPath = () => {
     if (!enhancedProfile) {
@@ -137,11 +159,36 @@ export const MainNavbar: React.FC = () => {
             })}
           </div>
 
-          {/* User Profile - Simplified */}
+          {/* User Profile & Auth Buttons */}
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-              <User className="w-4 h-4 text-white" />
-            </div>
+            {isLoggedIn ? (
+              <>
+                <button
+                  onClick={handleProfileClick}
+                  className="w-10 h-10 bg-gradient-to-br from-pink-500 to-purple-500 rounded-full flex items-center justify-center hover:shadow-lg transition-shadow cursor-pointer"
+                  title="Go to Dashboard"
+                >
+                  <User className="w-5 h-5 text-white" />
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="hidden md:flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
+                  title="Logout"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Logout</span>
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => navigate('/signin')}
+                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:shadow-lg transition-shadow text-sm font-medium"
+                title="Sign In"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Sign In</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -168,6 +215,24 @@ export const MainNavbar: React.FC = () => {
                 </button>
               );
             })}
+            {/* Mobile Auth Button */}
+            {isLoggedIn ? (
+              <button
+                onClick={handleLogout}
+                className="flex flex-col items-center space-y-1 px-3 py-2 rounded-lg text-xs font-medium bg-red-50 text-red-600 flex-shrink-0"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Logout</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate('/signin')}
+                className="flex flex-col items-center space-y-1 px-3 py-2 rounded-lg text-xs font-medium bg-purple-50 text-purple-600 flex-shrink-0"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Sign In</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

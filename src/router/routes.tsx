@@ -8,6 +8,7 @@ import { CareerPathGenerator } from '@/pages/CareerPathGenerator'
 import { LearningRoadmap } from '@/pages/LearningRoadmap'
 import SignIn from '@/pages/SignIn'
 import SignUp from '@/pages/SignUp'
+import Profile from '@/pages/Profile'
 import AdminDashboard from '@/pages/AdminDashboard'
 import ProtectedRoute, { AdminRoute } from '@/components/ProtectedRoute'
 
@@ -24,6 +25,7 @@ const AppRoutes = () => {
       <Route path="/" element={<Landing />} />
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
+      <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
       <Route path="/details" element={<Details />} />
       <Route path="/assessment" element={<CareerAssessment />} />

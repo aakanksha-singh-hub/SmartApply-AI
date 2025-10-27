@@ -24,9 +24,7 @@ const educationLevels: { value: EducationLevel; label: string }[] = [
 ];
 
 const schema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
   age: z.coerce.number().min(16, 'Age must be at least 16').max(100, 'Age must be less than 100'),
-  educationLevel: z.enum(['high-school', 'associates', 'bachelors', 'masters', 'phd', 'other']),
   skills: z.array(z.string()).min(1, 'Please add at least one skill'),
   careerInterest: z.string().min(5, 'Career interest must be at least 5 characters')
 });
@@ -94,6 +92,8 @@ export const Details = () => {
   const onSubmit = async (data: any) => {
     const profile = {
       ...data,
+      name: 'User', // Default name since we removed the field
+      educationLevel: 'bachelors' as EducationLevel, // Default education level
       skills: data.skills,
       selectedCareer: selectedCareer || undefined
     };
@@ -170,15 +170,6 @@ export const Details = () => {
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <FormInput
-                label="Full Name"
-                name="name"
-                placeholder="Enter your full name"
-                register={register}
-                error={errors.name as any}
-                required
-              />
-
-              <FormInput
                 label="Age"
                 name="age"
                 type="number"
@@ -187,27 +178,6 @@ export const Details = () => {
                 error={errors.age as any}
                 required
               />
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-foreground">
-                  Education Level <span className="text-destructive ml-1">*</span>
-                </label>
-                <select
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  {...register('educationLevel')}
-                >
-                  {educationLevels.map((level) => (
-                    <option key={level.value} value={level.value}>
-                      {level.label}
-                    </option>
-                  ))}
-                </select>
-                {errors.educationLevel && (
-                  <p className="text-sm text-destructive font-medium">
-                    {(errors.educationLevel as any).message}
-                  </p>
-                )}
-              </div>
 
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-foreground">

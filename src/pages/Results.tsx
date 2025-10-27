@@ -10,19 +10,80 @@ import { useUserStore } from '../lib/stores/userStore';
 import { CareerService } from '../lib/services/careerService';
 import { AlternativeCareer } from '../lib/types';
 import { toast } from 'sonner';
-import { ArrowLeft, RefreshCw, Loader2 } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Loader2, Target } from 'lucide-react';
 
 export const Results = () => {
   const navigate = useNavigate();
-  const { profile, results, setResults, clearData } = useUserStore();
+  const { profile, results, setResults, clearData, setEnhancedProfile, enhancedProfile } = useUserStore();
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedAlternative, setSelectedAlternative] = useState<string | null>(null);
   const [originalResults, setOriginalResults] = useState(results);
+  const [profileCreated, setProfileCreated] = useState(false);
+
+  // Manual function to create enhanced profile
+  const createEnhancedProfile = () => {
+    if (!profile || !results) return;
+    
+    console.log('=== MANUALLY CREATING ENHANCED PROFILE ===');
+    console.log('Current profile:', profile);
+    console.log('Current results:', results);
+    
+    const newEnhancedProfile = {
+      ...profile,
+      careerRecommendations: results?.alternativeCareers || [],
+      progressData: {
+        completedModules: [],
+        currentModule: null,
+        overallProgress: 0,
+        skillProgress: {},
+        lastUpdated: new Date()
+      },
+      achievements: [],
+      currentMilestones: [],
+      level: 1,
+      experiencePoints: 0,
+      badges: [],
+      streaks: {
+        currentStreak: 0,
+        longestStreak: 0,
+        lastActivityDate: new Date(),
+        streakHistory: []
+      },
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    console.log('New enhanced profile to save:', newEnhancedProfile);
+    setEnhancedProfile(newEnhancedProfile);
+    setProfileCreated(true);
+    toast.success('Profile saved! You can now go to dashboard.');
+  };
 
   useEffect(() => {
+    console.log('=== RESULTS PAGE USEEFFECT ===');
+    console.log('Profile:', profile);
+    console.log('Results:', results);
+    console.log('Enhanced Profile:', enhancedProfile);
+    console.log('Profile Created State:', profileCreated);
+    
     if (!profile || !results) {
+      console.log('Missing profile or results, redirecting to details');
       navigate('/details');
       return;
+    }
+    
+    // Check if enhanced profile has the required gamification fields
+    const hasGamificationFields = enhancedProfile && 
+      'achievements' in enhancedProfile && 
+      'badges' in enhancedProfile && 
+      'level' in enhancedProfile;
+    
+    console.log('Has gamification fields?', hasGamificationFields);
+    
+    // Create enhanced profile if it doesn't have gamification fields
+    if (!profileCreated && !hasGamificationFields) {
+      console.log('Creating enhanced profile automatically...');
+      createEnhancedProfile();
     }
     
     // Store original results when first loaded
@@ -31,8 +92,10 @@ export const Results = () => {
     }
     
     // Show success toast
-    toast.success('Career path generated! (demo)');
-  }, [profile, results, navigate, originalResults]);
+    if (profileCreated) {
+      toast.success('Career path generated and profile saved!');
+    }
+  }, [profile, results, navigate, originalResults, profileCreated, enhancedProfile]);
 
   const handleStartOver = () => {
     clearData();
@@ -96,6 +159,24 @@ export const Results = () => {
               </h1>
             </div>
             <div className="flex space-x-2">
+              {!enhancedProfile && (
+                <NBButton
+                  onClick={createEnhancedProfile}
+                  className="flex items-center space-x-2 bg-green-600 hover:bg-green-700"
+                >
+                  <Target className="w-4 h-4" />
+                  <span>Save Profile & Continue</span>
+                </NBButton>
+              )}
+              {enhancedProfile && (
+                <NBButton
+                  onClick={() => navigate('/dashboard')}
+                  className="flex items-center space-x-2"
+                >
+                  <Target className="w-4 h-4" />
+                  <span>Go to Dashboard</span>
+                </NBButton>
+              )}
               {originalResults && results !== originalResults && (
                 <NBButton
                   variant="secondary"

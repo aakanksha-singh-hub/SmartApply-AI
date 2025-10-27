@@ -21,7 +21,9 @@ const SignUp: React.FC = () => {
         try {
             const res = await axios.post('/auth/register', { username, password })
             authenticate({ ...(res.data), token: res.data.token, data: res.data.user })
-            navigate('/')
+            
+            // New users always go to assessment first
+            navigate('/assessment')
         } catch (err: any) {
             console.error(err)
             if (err.response?.status === 409) {
