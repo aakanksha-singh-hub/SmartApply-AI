@@ -22,9 +22,15 @@ const SignUp: React.FC = () => {
             const res = await axios.post('/auth/register', { username, password })
             authenticate({ ...(res.data), token: res.data.token, data: res.data.user })
             navigate('/')
-        } catch (err) {
+        } catch (err: any) {
             console.error(err)
-            alert('Sign up failed')
+            if (err.response?.status === 409) {
+                alert('Username already exists. Please choose a different username or sign in.')
+            } else if (err.response?.data?.error) {
+                alert(`Sign up failed: ${err.response.data.error}`)
+            } else {
+                alert('Sign up failed. Please try again.')
+            }
         } finally {
             setLoading(false)
         }

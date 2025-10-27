@@ -9,7 +9,7 @@ const baseURL = (base.endsWith('/') ? base.slice(0, -1) : base) + '/api'
 
 const axiosInstance = axios.create({
   baseURL: baseURL,
-  timeout: 5000,
+  timeout: 30000, // Increased to 30 seconds for database operations
 })
 
 axiosInstance.interceptors.request.use(

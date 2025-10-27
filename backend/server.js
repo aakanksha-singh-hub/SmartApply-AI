@@ -110,4 +110,16 @@ connectDb().then(() => {
   app.listen(PORT, () => {
     console.log(`SmartApply backend listening on http://localhost:${PORT}`);
   });
+}).catch(err => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
+});
+
+// Prevent server crashes from unhandled errors
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
 });

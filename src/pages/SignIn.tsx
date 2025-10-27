@@ -20,9 +20,15 @@ const SignIn: React.FC = () => {
             const res = await axios.post('/auth/login', { username, password })
             authenticate({ ...(res.data), token: res.data.token, data: res.data.user })
             navigate('/')
-        } catch (err) {
+        } catch (err: any) {
             console.error(err)
-            alert('Login failed')
+            if (err.response?.status === 401) {
+                alert('Invalid username or password. Please try again.')
+            } else if (err.response?.data?.error) {
+                alert(`Login failed: ${err.response.data.error}`)
+            } else {
+                alert('Login failed. Please try again.')
+            }
         } finally {
             setLoading(false)
         }
