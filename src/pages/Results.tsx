@@ -8,6 +8,7 @@ import { GridBackground } from '../components/ui/grid-background';
 import { DotBackground } from '../components/ui/dot-background';
 import { useUserStore } from '../lib/stores/userStore';
 import { CareerService } from '../lib/services/careerService';
+import { EnhancedProfileService } from '../lib/services/enhancedProfileService';
 import { AlternativeCareer } from '../lib/types';
 import { toast } from 'sonner';
 import { ArrowLeft, RefreshCw, Loader2, Target } from 'lucide-react';
@@ -21,21 +22,22 @@ export const Results = () => {
   const [profileCreated, setProfileCreated] = useState(false);
 
   // Manual function to create enhanced profile
-  const createEnhancedProfile = () => {
+  const createEnhancedProfile = async () => {
     if (!profile || !results) return;
     
+    console.log('Creating enhanced profile from results page:');
     console.log('=== MANUALLY CREATING ENHANCED PROFILE ===');
     console.log('Current profile:', profile);
     console.log('Current results:', results);
     
     const newEnhancedProfile = {
       ...profile,
-      careerRecommendations: results?.alternativeCareers || [],
+      careerRecommendations: results ? [results] : [],
       progressData: {
-        completedModules: [],
-        currentModule: null,
         overallProgress: 0,
         skillProgress: {},
+        milestoneProgress: {},
+        learningActivities: [],
         lastUpdated: new Date()
       },
       achievements: [],
@@ -47,16 +49,33 @@ export const Results = () => {
         currentStreak: 0,
         longestStreak: 0,
         lastActivityDate: new Date(),
-        streakHistory: []
+        streakType: 'daily' as const,
+        streakGoal: 7
       },
       createdAt: new Date(),
       updatedAt: new Date()
     };
     
     console.log('New enhanced profile to save:', newEnhancedProfile);
-    setEnhancedProfile(newEnhancedProfile);
-    setProfileCreated(true);
-    toast.success('Profile saved! You can now go to dashboard.');
+    
+    try {
+      // Save to database first
+      console.log('Saving enhanced profile to database...');
+      const savedProfile = await EnhancedProfileService.saveEnhancedProfile(newEnhancedProfile);
+      console.log('Enhanced profile saved to database successfully:', savedProfile);
+      
+      // Then update local store
+      setEnhancedProfile(savedProfile);
+      setProfileCreated(true);
+      toast.success('Profile saved to database! You can now go to dashboard.');
+    } catch (error) {
+      console.error('Failed to save enhanced profile to database:', error);
+      
+      // Fallback to local storage only
+      setEnhancedProfile(newEnhancedProfile);
+      setProfileCreated(true);
+      toast.warning('Profile saved locally. Database sync will retry later.');
+    }
   };
 
   useEffect(() => {
@@ -82,6 +101,7 @@ export const Results = () => {
     
     // Create enhanced profile if it doesn't have gamification fields
     if (!profileCreated && !hasGamificationFields) {
+      console.log('Creating enhanced profile from results page:');
       console.log('Creating enhanced profile automatically...');
       createEnhancedProfile();
     }

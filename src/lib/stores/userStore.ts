@@ -148,6 +148,24 @@ export const useUserStore = create<UserStore>((set, get) => ({
         const currentState = get();
         setStoredData({ ...currentState, enhancedProfile: profile });
         console.log('Enhanced profile saved to store and localStorage');
+        
+        // Auto-sync to database in the background (don't await to avoid blocking UI)
+        const syncToDatabase = async () => {
+          try {
+            const { EnhancedProfileService } = await import('../services/enhancedProfileService');
+            await EnhancedProfileService.updateEnhancedProfile(profile);
+            console.log('Enhanced profile auto-synced to database');
+          } catch (error) {
+            console.warn('Failed to auto-sync enhanced profile to database:', error);
+            // Don't throw error to avoid breaking the UI
+          }
+        };
+        
+        // Only sync if we have authentication token
+        const token = localStorage.getItem('jwt');
+        if (token) {
+          syncToDatabase();
+        }
       },
       
       setResults: (results: CareerRecommendation) => {

@@ -10,6 +10,7 @@ import { NBButton } from '../components/NBButton';
 import { useUserStore } from '../lib/stores/userStore';
 import { CareerService } from '../lib/services/careerService';
 import { AssessmentService } from '../lib/services/assessmentService';
+import { EnhancedProfileService } from '../lib/services/enhancedProfileService';
 import { CareerRecommendation } from '../lib/types';
 import { toast } from 'sonner';
 import { 
@@ -36,22 +37,90 @@ export const CareerDashboard = () => {
   const [selectedCareerId, setSelectedCareerId] = useState<string | undefined>();
 
   useEffect(() => {
-    // If no enhanced profile but user is logged in, redirect to assessment
-    if (!enhancedProfile) {
+    console.log('=== CareerDashboard useEffect ===');
+    console.log('Enhanced profile in store:', enhancedProfile);
+    
+    // Check for enhanced profile in database, localStorage, and store
+    let hasValidProfile = !!enhancedProfile;
+    
+    const loadEnhancedProfile = async () => {
+      if (hasValidProfile) return;
+      
+      try {
+        // First try to load from database
+        console.log('No enhanced profile in store, checking database...');
+        const databaseProfile = await EnhancedProfileService.loadEnhancedProfile();
+        
+        if (databaseProfile && 
+            databaseProfile.achievements !== undefined &&
+            databaseProfile.badges !== undefined &&
+            databaseProfile.level !== undefined &&
+            databaseProfile.careerRecommendations !== undefined &&
+            databaseProfile.careerRecommendations.length > 0) {
+          
+          console.log('Found complete enhanced profile in database, loading into store...');
+          setEnhancedProfile(databaseProfile);
+          hasValidProfile = true;
+          return;
+        }
+      } catch (error) {
+        console.error('Error loading enhanced profile from database:', error);
+      }
+      
+      // Fallback to localStorage
+      if (!hasValidProfile) {
+        console.log('No enhanced profile in database, checking localStorage...');
+        try {
+          const storedData = localStorage.getItem('career-mentor-store');
+          if (storedData) {
+            const parsed = JSON.parse(storedData);
+            const storedProfile = parsed?.enhancedProfile;
+            
+            // Check if stored profile is complete
+            if (storedProfile && 
+                storedProfile.achievements !== undefined &&
+                storedProfile.badges !== undefined &&
+                storedProfile.level !== undefined &&
+                storedProfile.careerRecommendations !== undefined &&
+                storedProfile.careerRecommendations.length > 0) {
+              
+              console.log('Found complete enhanced profile in localStorage, loading into store...');
+              setEnhancedProfile(storedProfile);
+              hasValidProfile = true;
+            }
+          }
+        } catch (error) {
+          console.error('Error checking localStorage for enhanced profile:', error);
+        }
+      }
+    };
+    
+    // Load enhanced profile if not available
+    if (!hasValidProfile) {
+      loadEnhancedProfile();
+    }
+    
+    // Only redirect if we definitely don't have a valid profile
+    if (!hasValidProfile) {
       const token = localStorage.getItem('jwt');
       if (token) {
         // User is logged in but hasn't completed assessment
+        console.log('No valid enhanced profile found, redirecting to assessment');
         toast.info('Please complete your career assessment first');
         navigate('/assessment');
       } else {
         // User not logged in
+        console.log('No token found, redirecting to signin');
         navigate('/signin');
       }
       return;
     }
 
-    // Set selected career from profile
-    setSelectedCareerId(enhancedProfile.selectedCareerPath);
+    // Set selected career from profile (use current enhanced profile or the one we just loaded)
+    const currentProfile = enhancedProfile || (hasValidProfile ? JSON.parse(localStorage.getItem('career-mentor-store') || '{}')?.enhancedProfile : null);
+    if (currentProfile) {
+      setSelectedCareerId(currentProfile.selectedCareerPath);
+    }
     
     // Load recommendations
     loadRecommendations();

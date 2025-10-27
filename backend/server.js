@@ -106,6 +106,129 @@ app.get('/resume', authMiddleware, async (req, res) => {
   res.json({ resumes: list });
 });
 
+// Enhanced Profile endpoints
+// Save enhanced profile
+app.post('/user/enhanced-profile', authMiddleware, async (req, res) => {
+  try {
+    const enhancedProfileData = req.body;
+    
+    // Add metadata
+    enhancedProfileData.profileCreatedAt = new Date();
+    enhancedProfileData.profileUpdatedAt = new Date();
+    
+    console.log('Saving enhanced profile for user:', req.user.id);
+    console.log('Enhanced profile data keys:', Object.keys(enhancedProfileData));
+    
+    // First, find the user
+    const user = await User.findById(req.user.id).exec();
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Set the enhanced profile directly
+    user.enhancedProfile = enhancedProfileData;
+    
+    // Save the user
+    await user.save();
+    
+    console.log('Enhanced profile saved successfully');
+    res.json(user.enhancedProfile);
+  } catch (err) {
+    console.error('Save enhanced profile error:', err);
+    console.error('Error details:', err.message);
+    console.error('Stack trace:', err.stack);
+    res.status(500).json({ error: 'Failed to save enhanced profile', details: err.message });
+  }
+});
+
+// Load enhanced profile
+app.get('/user/enhanced-profile', authMiddleware, async (req, res) => {
+  try {
+    console.log('Loading enhanced profile for user:', req.user.id);
+    
+    const user = await User.findById(req.user.id).select('enhancedProfile').exec();
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Check if enhanced profile exists and has meaningful data
+    const profile = user.enhancedProfile;
+    if (!profile || 
+        (!profile.name && 
+         !profile.careerRecommendations?.length && 
+         !profile.careerAssessment?.completedAt)) {
+      console.log('No meaningful enhanced profile found for user');
+      return res.status(404).json({ error: 'Enhanced profile not found' });
+    }
+    
+    console.log('Enhanced profile loaded successfully');
+    res.json(user.enhancedProfile);
+  } catch (err) {
+    console.error('Load enhanced profile error:', err);
+    res.status(500).json({ error: 'Failed to load enhanced profile' });
+  }
+});
+
+// Update enhanced profile
+app.patch('/user/enhanced-profile', authMiddleware, async (req, res) => {
+  try {
+    const updates = req.body;
+    console.log('Updating enhanced profile for user:', req.user.id);
+    console.log('Updates:', updates);
+    
+    // Prepare update object with dot notation for nested updates
+    const updateObj = {};
+    Object.keys(updates).forEach(key => {
+      updateObj[`enhancedProfile.${key}`] = updates[key];
+    });
+    updateObj['enhancedProfile.profileUpdatedAt'] = new Date();
+    
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      updateObj,
+      { new: true, upsert: false }
+    ).select('enhancedProfile').exec();
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    if (!user.enhancedProfile) {
+      return res.status(404).json({ error: 'Enhanced profile not found' });
+    }
+    
+    console.log('Enhanced profile updated successfully');
+    res.json(user.enhancedProfile);
+  } catch (err) {
+    console.error('Update enhanced profile error:', err);
+    res.status(500).json({ error: 'Failed to update enhanced profile' });
+  }
+});
+
+// Delete enhanced profile
+app.delete('/user/enhanced-profile', authMiddleware, async (req, res) => {
+  try {
+    console.log('Deleting enhanced profile for user:', req.user.id);
+    
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { $unset: { enhancedProfile: 1 } },
+      { new: true }
+    ).select('-passwordHash').exec();
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    console.log('Enhanced profile deleted successfully');
+    res.json({ message: 'Enhanced profile deleted successfully' });
+  } catch (err) {
+    console.error('Delete enhanced profile error:', err);
+    res.status(500).json({ error: 'Failed to delete enhanced profile' });
+  }
+});
+
 connectDb().then(() => {
   app.listen(PORT, () => {
     console.log(`SmartApply backend listening on http://localhost:${PORT}`);
