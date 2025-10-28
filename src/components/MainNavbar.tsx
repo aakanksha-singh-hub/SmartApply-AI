@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useUserStore } from '../lib/stores/userStore';
-import { getToken } from '../utility/helper';
+import { AuthService } from '../lib/services/authService';
 
 interface NavItem {
   id: string;
@@ -53,13 +53,36 @@ export const MainNavbar: React.FC = () => {
   const location = useLocation();
   const { enhancedProfile } = useUserStore();
   
-  // Check if user is logged in
-  const isLoggedIn = !!getToken();
+  // Check if user is logged in using AuthService
+  const isLoggedIn = AuthService.isAuthenticated();
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/signin');
-    window.location.reload();
+  const handleLogout = async () => {
+    console.log('=== MainNavbar Logout Initiated ===');
+    
+    try {
+      // Use AuthService logout (Requirements 2.1, 2.2, 2.3)
+      const success = await AuthService.logout();
+      
+      if (success) {
+        console.log('✓ Logout successful from MainNavbar, redirecting to signin');
+        
+        // Clear user store state
+        const { logout: storeLogout } = useUserStore.getState();
+        await storeLogout();
+        
+        // Navigate to signin page
+        navigate('/signin', { replace: true });
+        
+        console.log('✓ Logout process completed successfully');
+      } else {
+        console.log('ℹ Logout cancelled by user');
+      }
+    } catch (error) {
+      console.error('❌ Logout error in MainNavbar:', error);
+      
+      // Fallback - still navigate to signin
+      navigate('/signin', { replace: true });
+    }
   };
 
   const handleProfileClick = () => {
@@ -117,8 +140,8 @@ export const MainNavbar: React.FC = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 px-4 py-3">
       <div className="max-w-7xl mx-auto">
-        {/* Glass navbar container */}
-        <div className="relative backdrop-blur-xl bg-white/90 border border-white/20 rounded-2xl shadow-xl">
+        {/* Enhanced glass navbar container */}
+        <div className="relative glass-navbar rounded-2xl shadow-strong">
           <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-white/5 rounded-2xl"></div>
           
           <div className="relative px-6 py-3">
@@ -142,12 +165,13 @@ export const MainNavbar: React.FC = () => {
                   key={item.id}
                   onClick={() => handleNavigation(item)}
                   className={cn(
-                    'flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                    'flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-smooth focus-ring',
                     isActive
-                      ? 'bg-blue-100 text-blue-700 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                      ? 'bg-primary/10 text-primary shadow-soft'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 btn-hover-lift'
                   )}
                   title={item.description}
+                  aria-current={isActive ? 'page' : undefined}
                 >
                   <Icon className={cn(
                     'w-4 h-4',
@@ -165,15 +189,17 @@ export const MainNavbar: React.FC = () => {
               <>
                 <button
                   onClick={handleProfileClick}
-                  className="w-10 h-10 bg-gradient-to-br from-pink-500 to-purple-500 rounded-full flex items-center justify-center hover:shadow-lg transition-shadow cursor-pointer"
+                  className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center btn-hover-lift focus-ring"
                   title="Go to Dashboard"
+                  aria-label="Go to Dashboard"
                 >
                   <User className="w-5 h-5 text-white" />
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="hidden md:flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
+                  className="hidden md:flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-smooth text-sm font-medium btn-hover-lift focus-ring"
                   title="Logout"
+                  aria-label="Logout from your account"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Logout</span>
@@ -182,8 +208,9 @@ export const MainNavbar: React.FC = () => {
             ) : (
               <button
                 onClick={() => navigate('/signin')}
-                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:shadow-lg transition-shadow text-sm font-medium"
+                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary to-accent text-white rounded-lg btn-hover-lift focus-ring text-sm font-medium"
                 title="Sign In"
+                aria-label="Sign in to your account"
               >
                 <LogIn className="w-4 h-4" />
                 <span>Sign In</span>

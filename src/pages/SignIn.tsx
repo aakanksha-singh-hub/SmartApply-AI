@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import axios from '@/utility/axiosInterceptor'
-import { authenticate } from '@/utility/helper'
 import { useNavigate, Link } from 'react-router-dom'
 import { Layout } from '@/components/Layout'
 import { NBCard } from '@/components/NBCard'
@@ -8,6 +6,8 @@ import { NBButton } from '@/components/NBButton'
 import { BGPattern } from '@/components/ui/bg-pattern'
 import { useUserStore } from '@/lib/stores/userStore'
 import { EnhancedProfileService } from '@/lib/services/enhancedProfileService'
+import { AuthService } from '@/lib/services/authService'
+import { debugLogger } from '@/lib/utils/debugLogger'
 
 const SignIn: React.FC = () => {
     const [username, setUsername] = useState('')
@@ -18,8 +18,11 @@ const SignIn: React.FC = () => {
 
     // Force reload enhanced profile from localStorage on component mount
     useEffect(() => {
-        console.log('=== SignIn Component Mounted ===')
-        console.log('Current enhanced profile in store:', enhancedProfile)
+        debugLogger.log('SignIn component mounted', {
+            component: 'SignIn',
+            action: 'component_mount',
+            metadata: { hasEnhancedProfile: !!enhancedProfile }
+        });
         
         // Force reload from localStorage to ensure we have the latest data
         try {
@@ -27,36 +30,41 @@ const SignIn: React.FC = () => {
             if (storedData) {
                 const parsed = JSON.parse(storedData)
                 if (parsed.enhancedProfile && !enhancedProfile) {
-                    console.log('Found enhanced profile in localStorage, loading into store:', parsed.enhancedProfile)
+                    debugLogger.log('Found enhanced profile in localStorage, loading into store', {
+                        component: 'SignIn',
+                        action: 'profile_reload',
+                        metadata: { profileId: parsed.enhancedProfile?.id }
+                    });
                     setEnhancedProfile(parsed.enhancedProfile)
                 }
             }
         } catch (error) {
-            console.error('Error loading enhanced profile from localStorage:', error)
+            debugLogger.error('Error loading enhanced profile from localStorage', error as Error, {
+                component: 'SignIn',
+                action: 'profile_reload'
+            });
         }
     }, [])
 
     const submit = async (e: React.FormEvent) => {
         e.preventDefault()
+        
         setLoading(true)
         
-        console.log('=== Authentication Process Started ===')
-        console.log('Attempting to authenticate user:', username)
-        
         try {
-            const res = await axios.post('/auth/login', { username, password })
-            console.log('✓ Authentication API call successful:', res.data)
+            // Use AuthService for login (Requirements 1.2, 1.3)
+            const result = await AuthService.login({ username, password });
             
-            // Store authentication data
-            authenticate({ ...(res.data), token: res.data.token, data: res.data.user })
-            console.log('✓ Authentication data stored successfully in localStorage')
-            console.log('User data:', res.data.user)
-            console.log('Token stored:', !!res.data.token)
+            if (!result.success) {
+                return; // Error handling is done in AuthService
+            }
             
             // Fetch enhanced profile from database after authentication
             const checkEnhancedProfile = async () => {
-                console.log('=== Enhanced Profile Detection Process ===')
-                console.log('Checking for existing enhanced profile after authentication...')
+                debugLogger.log('Enhanced profile detection process started', {
+                    component: 'SignIn',
+                    action: 'profile_detection_start'
+                });
                 
                 // Function to check if a profile is complete
                 const isProfileComplete = (profile: any) => {
@@ -85,34 +93,57 @@ const SignIn: React.FC = () => {
                 
                 try {
                     // First, try to fetch enhanced profile from database
-                    console.log('Fetching enhanced profile from database...')
+                    debugLogger.log('Fetching enhanced profile from database', {
+                        component: 'SignIn',
+                        action: 'profile_fetch_db'
+                    });
                     const databaseProfile = await EnhancedProfileService.loadEnhancedProfile()
                     
                     if (databaseProfile && isProfileComplete(databaseProfile)) {
-                        console.log('✓ Complete enhanced profile found in database:', databaseProfile)
+                        debugLogger.log('Complete enhanced profile found in database', {
+                            component: 'SignIn',
+                            action: 'profile_found_db',
+                            metadata: { profileName: databaseProfile.name }
+                        });
                         hasEnhancedProfile = true
                         profileData = databaseProfile
                         
                         // Load into store
                         setEnhancedProfile(databaseProfile)
-                        console.log('Enhanced profile loaded into store from database')
+                        debugLogger.log('Enhanced profile loaded into store from database', {
+                            component: 'SignIn',
+                            action: 'profile_loaded_store'
+                        });
                     } else if (databaseProfile) {
-                        console.log('✗ Enhanced profile found in database but incomplete:', {
-                            hasAchievements: databaseProfile.achievements !== undefined,
-                            hasBadges: databaseProfile.badges !== undefined,
-                            hasLevel: databaseProfile.level !== undefined,
-                            hasRecommendations: databaseProfile.careerRecommendations !== undefined,
-                            hasProgressData: databaseProfile.progressData !== undefined,
-                            recommendationsCount: databaseProfile.careerRecommendations?.length || 0
-                        })
+                        debugLogger.warn('Enhanced profile found in database but incomplete', {
+                            component: 'SignIn',
+                            action: 'profile_incomplete_db',
+                            metadata: {
+                                hasAchievements: databaseProfile.achievements !== undefined,
+                                hasBadges: databaseProfile.badges !== undefined,
+                                hasLevel: databaseProfile.level !== undefined,
+                                hasRecommendations: databaseProfile.careerRecommendations !== undefined,
+                                hasProgressData: databaseProfile.progressData !== undefined,
+                                recommendationsCount: databaseProfile.careerRecommendations?.length || 0
+                            }
+                        });
                     } else {
-                        console.log('✗ No enhanced profile found in database')
+                        debugLogger.log('No enhanced profile found in database', {
+                            component: 'SignIn',
+                            action: 'profile_not_found_db'
+                        });
                     }
                 } catch (error) {
-                    console.error('Error fetching enhanced profile from database:', error)
+                    debugLogger.error('Error fetching enhanced profile from database', error as Error, {
+                        component: 'SignIn',
+                        action: 'profile_fetch_db'
+                    });
                     
                     // Fallback to localStorage check
-                    console.log('⚠ Falling back to localStorage check...')
+                    debugLogger.log('Falling back to localStorage check', {
+                        component: 'SignIn',
+                        action: 'profile_fallback_localStorage'
+                    });
                     const storedProfile = localStorage.getItem('career-mentor-store')
                     
                     if (storedProfile) {
@@ -124,14 +155,24 @@ const SignIn: React.FC = () => {
                             profileData = enhancedProfileData
                             
                             if (hasEnhancedProfile) {
-                                console.log('✓ Complete enhanced profile found in localStorage:', profileData)
+                                debugLogger.log('Complete enhanced profile found in localStorage', {
+                                    component: 'SignIn',
+                                    action: 'profile_found_localStorage',
+                                    metadata: { profileName: profileData?.name }
+                                });
                                 // Load into store
                                 setEnhancedProfile(enhancedProfileData)
                             } else {
-                                console.log('✗ Enhanced profile incomplete in localStorage')
+                                debugLogger.log('Enhanced profile incomplete in localStorage', {
+                                    component: 'SignIn',
+                                    action: 'profile_incomplete_localStorage'
+                                });
                             }
                         } catch (parseError) {
-                            console.error('✗ Error parsing localStorage data:', parseError)
+                            debugLogger.error('Error parsing localStorage data', parseError as Error, {
+                                component: 'SignIn',
+                                action: 'profile_parse_localStorage'
+                            });
                             hasEnhancedProfile = false
                         }
                     }
@@ -139,49 +180,47 @@ const SignIn: React.FC = () => {
                 
                 // Also check Zustand store as final fallback
                 if (!hasEnhancedProfile && enhancedProfile) {
-                    console.log('⚠ Checking Zustand store as final fallback...')
+                    debugLogger.log('Checking Zustand store as final fallback', {
+                        component: 'SignIn',
+                        action: 'profile_fallback_zustand'
+                    });
                     hasEnhancedProfile = isProfileComplete(enhancedProfile)
                     
                     if (hasEnhancedProfile) {
-                        console.log('✓ Complete enhanced profile found in Zustand store:', enhancedProfile)
+                        debugLogger.log('Complete enhanced profile found in Zustand store', {
+                            component: 'SignIn',
+                            action: 'profile_found_zustand',
+                            metadata: { profileName: enhancedProfile?.name }
+                        });
                         profileData = enhancedProfile
                     }
                 }
                 
                 // Make routing decision based on enhanced profile existence
-                console.log('=== Routing Decision ===')
+                debugLogger.logProfileDetection(hasEnhancedProfile, profileData);
+                
                 if (hasEnhancedProfile) {
-                    console.log('✓ Enhanced profile detected - user has completed assessment')
-                    console.log('→ Redirecting to dashboard (Requirements 4.3, 4.5)')
+                    debugLogger.logNavigation(window.location.pathname, '/dashboard', 'Enhanced profile detected - Requirements 4.3, 4.5');
                     navigate('/dashboard')
                 } else {
-                    console.log('✗ No enhanced profile found - user needs to complete assessment')
-                    console.log('→ Redirecting to assessment (Requirements 4.3, 4.5)')
+                    debugLogger.logNavigation(window.location.pathname, '/assessment', 'No enhanced profile - Requirements 4.3, 4.5');
                     navigate('/assessment')
                 }
-                console.log('=== End Profile Detection ===')
             }
             
             // Small delay to ensure localStorage is updated, then check profile
             setTimeout(checkEnhancedProfile, 100)
-        } catch (err: any) {
-            console.log('=== Authentication Failed ===')
-            console.error('✗ Authentication error:', err)
-            
-            if (err.response?.status === 401) {
-                console.log('✗ Authentication error: Invalid credentials (401)')
-                alert('Invalid username or password. Please try again.')
-            } else if (err.response?.data?.error) {
-                console.log('✗ Authentication error from server:', err.response.data.error)
-                alert(`Login failed: ${err.response.data.error}`)
-            } else {
-                console.log('✗ Authentication error: Unknown error')
-                console.error('Full error details:', err)
-                alert('Login failed. Please try again.')
-            }
+        } catch (error) {
+            debugLogger.error('Sign in process failed', error as Error, {
+                component: 'SignIn',
+                action: 'signin_error'
+            });
         } finally {
             setLoading(false)
-            console.log('=== Authentication Process Complete ===')
+            debugLogger.log('Authentication process complete', {
+                component: 'SignIn',
+                action: 'auth_complete'
+            });
         }
     }
 
@@ -214,8 +253,29 @@ const SignIn: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div>
+                            <div className="space-y-3">
                                 <NBButton type="submit" className="w-full" disabled={loading}>{loading ? 'Signing in...' : 'Sign In'}</NBButton>
+                                
+                                {import.meta.env.MODE === 'development' && (
+                                    <div className="text-center">
+                                        <div className="text-xs text-gray-500 mb-2">Development Mode</div>
+                                        <NBButton 
+                                            type="button" 
+                                            variant="secondary" 
+                                            className="w-full text-sm" 
+                                            onClick={() => {
+                                                setUsername('demo');
+                                                setPassword('Demo123!@');
+                                            }}
+                                            disabled={loading}
+                                        >
+                                            Fill Demo Credentials
+                                        </NBButton>
+                                        <div className="text-xs text-gray-400 mt-1">
+                                            Username: demo | Password: Demo123!@
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </form>
                     </NBCard>

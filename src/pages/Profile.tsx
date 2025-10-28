@@ -4,6 +4,7 @@ import { Layout } from '@/components/Layout';
 import { NBCard } from '@/components/NBCard';
 import { NBButton } from '@/components/NBButton';
 import { useUserStore } from '@/lib/stores/userStore';
+import { LogoutService } from '@/lib/services/logoutService';
 import { User, Mail, Lock, Calendar, Award, LogOut } from 'lucide-react';
 
 const Profile: React.FC = () => {
@@ -26,10 +27,44 @@ const Profile: React.FC = () => {
     }
   }, [enhancedProfile, navigate]);
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/signin');
-    window.location.reload();
+  const handleLogout = async () => {
+    console.log('=== Profile Page Logout Initiated ===');
+    
+    try {
+      // Show confirmation and perform logout
+      const success = await LogoutService.logoutWithConfirmation();
+      
+      if (success) {
+        console.log('✓ Logout successful from Profile page, redirecting to signin');
+        
+        // Navigate to signin page
+        navigate('/signin');
+        
+        // Force page reload to ensure complete state reset
+        setTimeout(() => {
+          console.log('🔄 Forcing page reload for complete state reset');
+          window.location.reload();
+        }, 500); // Increased delay to allow navigation to complete
+      } else {
+        console.log('ℹ Logout cancelled by user from Profile page');
+      }
+    } catch (error) {
+      console.error('❌ Logout error in Profile page:', error);
+      
+      // Emergency fallback logout
+      try {
+        await LogoutService.emergencyLogout();
+        navigate('/signin');
+        window.location.reload();
+      } catch (emergencyError) {
+        console.error('❌ Emergency logout also failed in Profile page:', emergencyError);
+        // Last resort - manual cleanup
+        localStorage.clear();
+        sessionStorage.clear();
+        navigate('/signin');
+        window.location.reload();
+      }
+    }
   };
 
   const handleSave = () => {

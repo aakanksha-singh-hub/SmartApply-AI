@@ -47,11 +47,31 @@ export const isAuth = () => {
   if (window) {
     try {
       const user = localStorage.getItem('user')
-      return !!(user && JSON.parse(user))
+      const token = localStorage.getItem('jwt')
+      
+      if (!user || !token) {
+        return false
+      }
+      
+      // Check if user can be parsed as JSON
+      const parsedUser = JSON.parse(user)
+      
+      // Check token expiration
+      const expirationDate = localStorage.getItem('expirationDate')
+      if (expirationDate) {
+        const expDate = new Date(expirationDate)
+        const now = new Date()
+        if (now > expDate) {
+          return false
+        }
+      }
+      
+      return !!(parsedUser && token)
     } catch (err) {
       return false
     }
   }
+  return false
 }
 
 export const getLocalNotification = () => {
@@ -67,22 +87,20 @@ export const getLocalNotification = () => {
 export const authenticate = (response: { data: string }) => {
   // response should include { user, token }
   if (response && (response as any).token) {
-    setLocalStorage('jwt', (response as any).token)
+    // Store token directly without JSON.stringify wrapping
+    localStorage.setItem('jwt', (response as any).token)
   }
   if (response && (response as any).user) {
-    setLocalStorage('user', JSON.stringify((response as any).user))
+    // Store user as JSON string
+    localStorage.setItem('user', JSON.stringify((response as any).user))
   }
 
   const expirationDate = new Date(new Date().getTime() + 60 * 60 * 24 * 10 * 1000)
-  setLocalStorage('expirationDate', expirationDate.toDateString())
+  localStorage.setItem('expirationDate', expirationDate.toISOString())
 }
 
 export const getToken = () => {
-  try {
-    return JSON.parse(localStorage.getItem('jwt') ?? 'null') ?? localStorage.getItem('jwt')
-  } catch (err) {
-    return localStorage.getItem('jwt')
-  }
+  return localStorage.getItem('jwt')
 }
 
 export const getUser = () => {

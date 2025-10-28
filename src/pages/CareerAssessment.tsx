@@ -1,9 +1,11 @@
-﻿import { useState } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { NBCard } from '../components/NBCard';
 import { NBButton } from '../components/NBButton';
 import { DepartmentService, Department, Subdepartment, RelatedJob } from '../lib/services/departmentService';
 import { ArrowLeft, Briefcase, ChevronRight } from 'lucide-react';
+import { debugLogger } from '../lib/utils/debugLogger';
+import { cn } from '../lib/utils';
 
 export const CareerAssessment = () => {
   const navigate = useNavigate();
@@ -11,6 +13,10 @@ export const CareerAssessment = () => {
   const [selectedSubdepartment, setSelectedSubdepartment] = useState<Subdepartment | null>(null);
   
   const departments = DepartmentService.getDepartments();
+
+  useEffect(() => {
+    debugLogger.logAssessmentStart({ component: 'CareerAssessment' });
+  }, []);
 
   const handleDepartmentSelect = (department: Department) => {
     setSelectedDepartment(department);
@@ -30,16 +36,21 @@ export const CareerAssessment = () => {
   };
 
   const handleJobSelect = (job: RelatedJob) => {
-    // Store the selected career for later use and navigate to details page
-    localStorage.setItem('selectedCareer', JSON.stringify({
+    const careerData = {
       title: job.title,
       description: job.description,
       department: selectedDepartment?.name,
       subdepartment: selectedSubdepartment?.name,
       averageSalary: job.averageSalary,
       keySkills: job.keySkills
-    }));
+    };
+
+    debugLogger.logAssessmentComplete(careerData);
     
+    // Store the selected career for later use and navigate to details page
+    localStorage.setItem('selectedCareer', JSON.stringify(careerData));
+    
+    debugLogger.logNavigation('/assessment', '/details', 'Career selected');
     navigate('/details');
   };
 
@@ -155,9 +166,9 @@ export const CareerAssessment = () => {
   return (
     <div className="min-h-screen pt-20">
       <div className="max-w-6xl mx-auto px-4 py-8">
-        <NBCard className="p-8">
+        <NBCard className="p-8 animate-slide-up" variant="glass">
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-blue-900 mb-4" style={{fontFamily: 'Playfair Display, serif'}}>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
               Career Discovery
             </h1>
             <p className="text-gray-600 text-lg max-w-2xl mx-auto">
@@ -166,11 +177,16 @@ export const CareerAssessment = () => {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
-            {departments.map((department) => (
-              <button
+            {departments.map((department, index) => (
+              <NBCard
                 key={department.id}
                 onClick={() => handleDepartmentSelect(department)}
-                className="text-left p-8 bg-gray-50 rounded-xl border border-gray-200 hover:shadow-xl transition-all"
+                interactive
+                className={cn(
+                  'p-8 text-left animate-slide-up',
+                  `animate-stagger-${Math.min(index + 1, 4)}`
+                )}
+                ariaLabel={`Select ${department.name} department with ${department.subdepartments.length} specializations`}
               >
                 <div className="flex items-center space-x-4 mb-4">
                   <div>
@@ -178,13 +194,13 @@ export const CareerAssessment = () => {
                     <p className="text-gray-600">{department.description}</p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2 text-blue-800">
+                <div className="flex items-center space-x-2 text-primary">
                   <Briefcase className="w-4 h-4" />
                   <span className="text-sm font-medium">
                     {department.subdepartments.length} specializations
                   </span>
                 </div>
-              </button>
+              </NBCard>
             ))}
           </div>
         </NBCard>

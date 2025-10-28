@@ -6,6 +6,7 @@ const UserSchema = new Schema({
   passwordHash: { type: String, required: true },
   accessLevel: { type: String, required: true, default: 'User' },
   createdAt: { type: Date, default: Date.now },
+  lastLoginDate: { type: Date, default: Date.now },
   
   // Enhanced Profile Data
   enhancedProfile: {
@@ -82,6 +83,48 @@ const UserSchema = new Schema({
       streakType: { type: String, default: 'daily' },
       streakGoal: { type: Number, default: 7 }
     },
+    
+    // Learning Resources System
+    learningProgress: {
+      userId: String,
+      domain: String,
+      subfield: String,
+      overallProgress: { type: Number, default: 0 },
+      completedResources: [String],
+      inProgressResources: [String],
+      skillsAcquired: [String],
+      timeSpent: { type: Number, default: 0 },
+      studyStreak: { type: Number, default: 0 },
+      lastActivityDate: { type: Date, default: Date.now },
+      milestones: [Schema.Types.Mixed],
+      achievements: [Schema.Types.Mixed],
+      createdAt: { type: Date, default: Date.now },
+      updatedAt: { type: Date, default: Date.now }
+    },
+    
+    learningChecklists: [Schema.Types.Mixed],
+    learningResourcesCompleted: [String],
+    
+    // Dashboard State for persistence (Requirement 9.1, 9.3)
+    dashboardState: {
+      selectedDomain: String,
+      selectedJobRole: String,
+      currentView: { type: String, enum: ['roadmap', 'resources', 'progress', 'similar-jobs'] },
+      scrollPosition: Number,
+      expandedSections: [String],
+      lastVisited: { type: Date, default: Date.now }
+    },
+    
+    // Session Progress for maintenance (Requirement 9.4)
+    sessionProgress: [{
+      sessionId: String,
+      startTime: { type: Date, default: Date.now },
+      lastActivity: { type: Date, default: Date.now },
+      activitiesCompleted: [String],
+      timeSpent: { type: Number, default: 0 },
+      currentResource: String,
+      progressSnapshot: Schema.Types.Mixed
+    }],
     
     // Profile metadata
     profileCreatedAt: { type: Date, default: Date.now },

@@ -9,9 +9,11 @@ import { DotBackground } from '../components/ui/dot-background';
 import { useUserStore } from '../lib/stores/userStore';
 import { CareerService } from '../lib/services/careerService';
 import { EnhancedProfileService } from '../lib/services/enhancedProfileService';
+import { ErrorHandlingService } from '../lib/services/errorHandlingService';
 import { AlternativeCareer } from '../lib/types';
 import { toast } from 'sonner';
 import { ArrowLeft, RefreshCw, Loader2, Target } from 'lucide-react';
+import { debugLogger } from '../lib/utils/debugLogger';
 
 export const Results = () => {
   const navigate = useNavigate();
@@ -25,10 +27,7 @@ export const Results = () => {
   const createEnhancedProfile = async () => {
     if (!profile || !results) return;
     
-    console.log('Creating enhanced profile from results page:');
-    console.log('=== MANUALLY CREATING ENHANCED PROFILE ===');
-    console.log('Current profile:', profile);
-    console.log('Current results:', results);
+    debugLogger.logProfileCreation({ profile, results });
     
     const newEnhancedProfile = {
       ...profile,
@@ -56,37 +55,73 @@ export const Results = () => {
       updatedAt: new Date()
     };
     
-    console.log('New enhanced profile to save:', newEnhancedProfile);
+    debugLogger.log('New enhanced profile created', {
+      component: 'Results',
+      action: 'profile_create',
+      metadata: { profileName: newEnhancedProfile.name }
+    });
     
     try {
-      // Save to database first
-      console.log('Saving enhanced profile to database...');
-      const savedProfile = await EnhancedProfileService.saveEnhancedProfile(newEnhancedProfile);
-      console.log('Enhanced profile saved to database successfully:', savedProfile);
+      // Save to database first with loading state
+      const savedProfile = await ErrorHandlingService.withLoadingAndErrorHandling(
+        () => EnhancedProfileService.saveEnhancedProfile(newEnhancedProfile),
+        'Saving your career profile...',
+        'Profile saved successfully! You can now access your dashboard.',
+        'Profile Creation'
+      );
       
-      // Then update local store
-      setEnhancedProfile(savedProfile);
-      setProfileCreated(true);
-      toast.success('Profile saved to database! You can now go to dashboard.');
+      if (savedProfile) {
+        debugLogger.log('Enhanced profile saved to database successfully', {
+          component: 'Results',
+          action: 'profile_save_db_success',
+          metadata: { profileName: savedProfile.name }
+        });
+        setEnhancedProfile(savedProfile);
+        setProfileCreated(true);
+      } else {
+        // Fallback to local storage only
+        debugLogger.warn('Database save failed, falling back to local storage', {
+          component: 'Results',
+          action: 'profile_save_fallback'
+        });
+        setEnhancedProfile(newEnhancedProfile);
+        setProfileCreated(true);
+        toast.warning('Profile saved locally. Database sync will retry later.', {
+          duration: 6000,
+          description: 'Your progress is saved, but may not sync across devices until connection is restored.'
+        });
+      }
     } catch (error) {
-      console.error('Failed to save enhanced profile to database:', error);
+      debugLogger.error('Failed to save enhanced profile', error as Error, {
+        component: 'Results',
+        action: 'profile_save_error'
+      });
       
-      // Fallback to local storage only
-      setEnhancedProfile(newEnhancedProfile);
-      setProfileCreated(true);
-      toast.warning('Profile saved locally. Database sync will retry later.');
+      // Emergency fallback
+      try {
+        setEnhancedProfile(newEnhancedProfile);
+        setProfileCreated(true);
+        ErrorHandlingService.handleStorageError(error, 'Profile creation');
+      } catch (fallbackError) {
+        ErrorHandlingService.handleGenericError(fallbackError, 'Profile Creation Fallback');
+      }
     }
   };
 
   useEffect(() => {
-    console.log('=== RESULTS PAGE USEEFFECT ===');
-    console.log('Profile:', profile);
-    console.log('Results:', results);
-    console.log('Enhanced Profile:', enhancedProfile);
-    console.log('Profile Created State:', profileCreated);
+    debugLogger.log('Results page useEffect triggered', {
+      component: 'Results',
+      action: 'useeffect_start',
+      metadata: {
+        hasProfile: !!profile,
+        hasResults: !!results,
+        hasEnhancedProfile: !!enhancedProfile,
+        profileCreated
+      }
+    });
     
     if (!profile || !results) {
-      console.log('Missing profile or results, redirecting to details');
+      debugLogger.logNavigation('/results', '/details', 'Missing profile or results');
       navigate('/details');
       return;
     }
@@ -97,12 +132,18 @@ export const Results = () => {
       'badges' in enhancedProfile && 
       'level' in enhancedProfile;
     
-    console.log('Has gamification fields?', hasGamificationFields);
+    debugLogger.log('Gamification fields check', {
+      component: 'Results',
+      action: 'gamification_check',
+      metadata: { hasGamificationFields }
+    });
     
     // Create enhanced profile if it doesn't have gamification fields
     if (!profileCreated && !hasGamificationFields) {
-      console.log('Creating enhanced profile from results page:');
-      console.log('Creating enhanced profile automatically...');
+      debugLogger.log('Creating enhanced profile automatically', {
+        component: 'Results',
+        action: 'profile_auto_create'
+      });
       createEnhancedProfile();
     }
     

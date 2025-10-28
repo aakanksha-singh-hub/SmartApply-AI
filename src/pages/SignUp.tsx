@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
-import axios from '@/utility/axiosInterceptor'
-import { authenticate } from '@/utility/helper'
 import { useNavigate, Link } from 'react-router-dom'
 import { Layout } from '@/components/Layout'
 import { NBCard } from '@/components/NBCard'
 import { NBButton } from '@/components/NBButton'
 import { BGPattern } from '@/components/ui/bg-pattern'
+import { AuthService } from '@/lib/services/authService'
+import { toast } from 'sonner'
 
 const SignUp: React.FC = () => {
     const [username, setUsername] = useState('')
@@ -16,25 +16,40 @@ const SignUp: React.FC = () => {
 
     const submit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (password !== confirm) return alert('Passwords do not match')
+        
         setLoading(true)
+        console.log('=== Sign Up Process Started ===')
+        console.log('Creating account for user:', username)
+        
         try {
-            const res = await axios.post('/auth/register', { username, password })
-            authenticate({ ...(res.data), token: res.data.token, data: res.data.user })
+            toast.loading('Creating your account...', { id: 'signup-process' });
             
-            // New users always go to assessment first
-            navigate('/assessment')
-        } catch (err: any) {
-            console.error(err)
-            if (err.response?.status === 409) {
-                alert('Username already exists. Please choose a different username or sign in.')
-            } else if (err.response?.data?.error) {
-                alert(`Sign up failed: ${err.response.data.error}`)
-            } else {
-                alert('Sign up failed. Please try again.')
+            // Use AuthService for sign up (Requirements 1.2, 1.3)
+            const result = await AuthService.signUp({ username, password, confirm });
+            
+            if (!result.success) {
+                toast.dismiss('signup-process');
+                return; // Error handling is done in AuthService
             }
+            
+            toast.success('Account created successfully! Welcome to SmartApply AI!', { 
+                id: 'signup-process',
+                duration: 4000
+            });
+            
+            console.log('✓ Account created successfully for:', username);
+            
+            // New users always go to assessment first (Requirement 1.4)
+            setTimeout(() => {
+                navigate('/assessment')
+            }, 1000);
+            
+        } catch (error) {
+            console.error('❌ Sign up failed:', error)
+            toast.dismiss('signup-process');
         } finally {
             setLoading(false)
+            console.log('=== Sign Up Process Complete ===')
         }
     }
 

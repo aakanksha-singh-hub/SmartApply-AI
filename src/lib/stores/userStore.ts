@@ -14,15 +14,19 @@ import {
   LevelInfo
 } from '../types';
 import { GamificationService } from '../services/gamificationService';
+import { debugLogger } from '../utils/debugLogger';
+import { cacheService } from '../services/cacheService';
+import { performanceMonitor } from '../services/performanceMonitorService';
 
-// Helper functions for localStorage persistence
+// Helper functions for localStorage persistence with performance monitoring
 const getStoredData = () => {
-  try {
-    const stored = localStorage.getItem('career-mentor-store');
-    const parsed = stored ? JSON.parse(stored) : {};
-    
-    // Convert date strings back to Date objects
-    if (parsed.enhancedProfile) {
+  return performanceMonitor.measureSync('user_store_read', () => {
+    try {
+      const stored = localStorage.getItem('career-mentor-store');
+      const parsed = stored ? JSON.parse(stored) : {};
+      
+      // Convert date strings back to Date objects
+      if (parsed.enhancedProfile) {
       const profile = parsed.enhancedProfile;
       
       // Convert profile dates
@@ -102,22 +106,28 @@ const getStoredData = () => {
       });
     }
     
-    console.log('Retrieved data from localStorage:', parsed);
-    return parsed;
-  } catch (error) {
-    console.error('Failed to retrieve from localStorage:', error);
-    return {};
-  }
+      debugLogger.logStorageOperation('read', 'career-mentor-store', true);
+      return parsed;
+    } catch (error) {
+      debugLogger.logStorageOperation('read', 'career-mentor-store', false);
+      return {};
+    }
+  }, 'memory');
 };
 
 const setStoredData = (data: any) => {
-  try {
-    const serialized = JSON.stringify(data);
-    localStorage.setItem('career-mentor-store', serialized);
-    console.log('Saved data to localStorage:', data);
-  } catch (error) {
-    console.error('Failed to save to localStorage:', error);
-  }
+  performanceMonitor.measureSync('user_store_write', () => {
+    try {
+      const serialized = JSON.stringify(data);
+      localStorage.setItem('career-mentor-store', serialized);
+      debugLogger.logStorageOperation('write', 'career-mentor-store', true);
+      
+      // Also cache in the cache service for faster access
+      cacheService.set('user_store_data', data, 60 * 60 * 1000); // 1 hour TTL
+    } catch (error) {
+      debugLogger.logStorageOperation('write', 'career-mentor-store', false);
+    }
+  }, 'memory');
 };
 
 const initialData = getStoredData();
@@ -143,11 +153,11 @@ export const useUserStore = create<UserStore>((set, get) => ({
       },
       
       setEnhancedProfile: (profile: EnhancedUserProfile) => {
-        console.log('Setting enhanced profile in store:', profile);
+        debugLogger.logProfileSave(profile);
         set({ enhancedProfile: profile });
         const currentState = get();
         setStoredData({ ...currentState, enhancedProfile: profile });
-        console.log('Enhanced profile saved to store and localStorage');
+        debugLogger.logProfileSaveComplete();
         
         // Auto-sync to database in the background (don't await to avoid blocking UI)
         const syncToDatabase = async () => {
@@ -498,6 +508,25 @@ export const useUserStore = create<UserStore>((set, get) => ({
       
       // Utility actions
       clearData: () => {
+        debugLogger.log('Clearing user store data', {
+          component: 'UserStore',
+          action: 'clear_data_start'
+        });
+        
+        // Log current state before clearing
+        const currentState = get();
+        debugLogger.log('Current state before clearing', {
+          component: 'UserStore',
+          action: 'clear_data_before',
+          metadata: {
+            hasProfile: !!currentState.profile,
+            hasEnhancedProfile: !!currentState.enhancedProfile,
+            hasResults: !!currentState.results,
+            conversationsCount: currentState.conversations?.length || 0,
+            resumeVersionsCount: currentState.resumeVersions?.length || 0
+          }
+        });
+        
         const clearedState = { 
           profile: null, 
           enhancedProfile: null,
@@ -506,8 +535,64 @@ export const useUserStore = create<UserStore>((set, get) => ({
           conversations: [],
           resumeVersions: []
         };
+        
+        // Clear in-memory state
         set(clearedState);
+        
+        // Clear localStorage
         setStoredData(clearedState);
+        
+        debugLogger.log('User store data cleared successfully', {
+          component: 'UserStore',
+          action: 'clear_data_complete'
+        });
+      },
+      
+      // Complete logout with state cleanup
+      logout: async (): Promise<boolean> => {
+        try {
+          debugLogger.logLogoutStart();
+          
+          // Clear store state first
+          debugLogger.log('Clearing user store state', {
+            component: 'UserStore',
+            action: 'logout_clear_state'
+          });
+          get().clearData();
+          
+          // Import and use logout service for additional cleanup
+          debugLogger.log('Performing additional cleanup', {
+            component: 'UserStore',
+            action: 'logout_additional_cleanup'
+          });
+          const { LogoutService } = await import('../services/logoutService');
+          await LogoutService.performLogout();
+          
+          debugLogger.logLogoutComplete(true);
+          return true;
+        } catch (error) {
+          debugLogger.error('User store logout failed', error as Error, {
+            component: 'UserStore',
+            action: 'logout_error'
+          });
+          
+          // Fallback - at least clear the store state
+          try {
+            get().clearData();
+            debugLogger.warn('Fallback: Store state cleared despite error', {
+              component: 'UserStore',
+              action: 'logout_fallback'
+            });
+          } catch (fallbackError) {
+            debugLogger.error('Even fallback clearData failed', fallbackError as Error, {
+              component: 'UserStore',
+              action: 'logout_fallback_error'
+            });
+          }
+          
+          debugLogger.logLogoutComplete(false);
+          return false;
+        }
       },
       
       exportData: (): string => {

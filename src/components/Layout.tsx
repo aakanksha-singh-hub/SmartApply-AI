@@ -15,11 +15,21 @@ export const Layout: React.FC<LayoutProps> = ({
 }) => {
   return (
     <div className="min-h-screen flex flex-col">
-      {showNavbar && <MainNavbar />}
-      <main className="relative flex-1">
+      {showNavbar && (
+        <header role="banner">
+          <MainNavbar />
+        </header>
+      )}
+      
+      <div className="relative flex-1 animate-fade-in">
         {children}
-      </main>
-      {showFooter && <Footer />}
+      </div>
+      
+      {showFooter && (
+        <footer role="contentinfo">
+          <Footer />
+        </footer>
+      )}
     </div>
   );
 };

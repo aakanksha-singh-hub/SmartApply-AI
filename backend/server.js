@@ -6,6 +6,7 @@ const { connectDb } = require('./db');
 const User = require('./models/User');
 const Resume = require('./models/Resume');
 const { hashPassword, comparePassword } = require('./utils/password');
+const profileRoutes = require('./routes/profileRoutes');
 
 dotenv.config();
 
@@ -20,6 +21,9 @@ app.use((req, res, next) => {
   }
   next()
 })
+
+// Profile and progress persistence routes
+app.use('/profile', authMiddleware, profileRoutes);
 
 const PORT = process.env.PORT || 4000;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
@@ -226,6 +230,407 @@ app.delete('/user/enhanced-profile', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error('Delete enhanced profile error:', err);
     res.status(500).json({ error: 'Failed to delete enhanced profile' });
+  }
+});
+
+// Learning Resources endpoints
+
+// Get learning progress for user
+app.get('/user/learning-progress', authMiddleware, async (req, res) => {
+  try {
+    const { domain, subfield } = req.query;
+    console.log('Getting learning progress for user:', req.user.id, { domain, subfield });
+    
+    const user = await User.findById(req.user.id).select('enhancedProfile').exec();
+    if (!user || !user.enhancedProfile) {
+      return res.status(404).json({ error: 'User profile not found' });
+    }
+
+    // Get or create learning progress
+    let learningProgress = user.enhancedProfile.learningProgress || {
+      userId: req.user.id,
+      domain: domain || 'all',
+      subfield,
+      overallProgress: 0,
+      completedResources: [],
+      inProgressResources: [],
+      skillsAcquired: [],
+      timeSpent: 0,
+      studyStreak: 0,
+      lastActivityDate: new Date(),
+      milestones: [],
+      achievements: [],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    res.json(learningProgress);
+  } catch (err) {
+    console.error('Get learning progress error:', err);
+    res.status(500).json({ error: 'Failed to get learning progress' });
+  }
+});
+
+// Update learning progress
+app.post('/user/learning-progress', authMiddleware, async (req, res) => {
+  try {
+    const progressUpdate = req.body;
+    console.log('Updating learning progress for user:', req.user.id, progressUpdate);
+    
+    const user = await User.findById(req.user.id).exec();
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Initialize enhanced profile if it doesn't exist
+    if (!user.enhancedProfile) {
+      user.enhancedProfile = {};
+    }
+
+    // Update learning progress
+    user.enhancedProfile.learningProgress = {
+      ...user.enhancedProfile.learningProgress,
+      ...progressUpdate,
+      updatedAt: new Date()
+    };
+
+    await user.save();
+    
+    console.log('Learning progress updated successfully');
+    res.json(user.enhancedProfile.learningProgress);
+  } catch (err) {
+    console.error('Update learning progress error:', err);
+    res.status(500).json({ error: 'Failed to update learning progress' });
+  }
+});
+
+// Update resource completion
+app.post('/user/resource-completion', authMiddleware, async (req, res) => {
+  try {
+    const { resourceId, completed, progress, timeSpent, rating, notes, skillsPracticed } = req.body;
+    console.log('Updating resource completion for user:', req.user.id, { resourceId, completed });
+    
+    const user = await User.findById(req.user.id).exec();
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Initialize enhanced profile if it doesn't exist
+    if (!user.enhancedProfile) {
+      user.enhancedProfile = {};
+    }
+
+    // Initialize learning progress if it doesn't exist
+    if (!user.enhancedProfile.learningProgress) {
+      user.enhancedProfile.learningProgress = {
+        userId: req.user.id,
+        domain: 'all',
+        overallProgress: 0,
+        completedResources: [],
+        inProgressResources: [],
+        skillsAcquired: [],
+        timeSpent: 0,
+        studyStreak: 0,
+        lastActivityDate: new Date(),
+        milestones: [],
+        achievements: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+    }
+
+    const learningProgress = user.enhancedProfile.learningProgress;
+
+    // Update resource completion status
+    if (completed && !learningProgress.completedResources.includes(resourceId)) {
+      learningProgress.completedResources.push(resourceId);
+      // Remove from in-progress if it was there
+      learningProgress.inProgressResources = learningProgress.inProgressResources.filter(id => id !== resourceId);
+    } else if (!completed && !learningProgress.inProgressResources.includes(resourceId)) {
+      learningProgress.inProgressResources.push(resourceId);
+    }
+
+    // Update skills acquired
+    if (skillsPracticed && skillsPracticed.length > 0) {
+      skillsPracticed.forEach(skill => {
+        if (!learningProgress.skillsAcquired.includes(skill)) {
+          learningProgress.skillsAcquired.push(skill);
+        }
+      });
+    }
+
+    // Update time spent
+    if (timeSpent) {
+      learningProgress.timeSpent = (learningProgress.timeSpent || 0) + timeSpent;
+    }
+
+    // Update timestamps
+    learningProgress.lastActivityDate = new Date();
+    learningProgress.updatedAt = new Date();
+
+    // Recalculate overall progress
+    const totalResources = learningProgress.completedResources.length + learningProgress.inProgressResources.length;
+    if (totalResources > 0) {
+      learningProgress.overallProgress = Math.round((learningProgress.completedResources.length / totalResources) * 100);
+    }
+
+    await user.save();
+    
+    console.log('Resource completion updated successfully');
+    res.json({ 
+      success: true, 
+      learningProgress: user.enhancedProfile.learningProgress 
+    });
+  } catch (err) {
+    console.error('Update resource completion error:', err);
+    res.status(500).json({ error: 'Failed to update resource completion' });
+  }
+});
+
+// Save learning checklist
+app.post('/user/learning-checklist', authMiddleware, async (req, res) => {
+  try {
+    const checklist = req.body;
+    console.log('Saving learning checklist for user:', req.user.id, checklist.id);
+    
+    const user = await User.findById(req.user.id).exec();
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Initialize enhanced profile if it doesn't exist
+    if (!user.enhancedProfile) {
+      user.enhancedProfile = {};
+    }
+
+    // Initialize learning checklists array if it doesn't exist
+    if (!user.enhancedProfile.learningChecklists) {
+      user.enhancedProfile.learningChecklists = [];
+    }
+
+    // Update or add checklist
+    const existingIndex = user.enhancedProfile.learningChecklists.findIndex(c => c.id === checklist.id);
+    if (existingIndex >= 0) {
+      user.enhancedProfile.learningChecklists[existingIndex] = checklist;
+    } else {
+      user.enhancedProfile.learningChecklists.push(checklist);
+    }
+
+    await user.save();
+    
+    console.log('Learning checklist saved successfully');
+    res.json(checklist);
+  } catch (err) {
+    console.error('Save learning checklist error:', err);
+    res.status(500).json({ error: 'Failed to save learning checklist' });
+  }
+});
+
+// Get learning checklists
+app.get('/user/learning-checklists', authMiddleware, async (req, res) => {
+  try {
+    const { domain } = req.query;
+    console.log('Getting learning checklists for user:', req.user.id, { domain });
+    
+    const user = await User.findById(req.user.id).select('enhancedProfile.learningChecklists').exec();
+    if (!user || !user.enhancedProfile) {
+      return res.json([]);
+    }
+
+    let checklists = user.enhancedProfile.learningChecklists || [];
+    
+    // Filter by domain if specified
+    if (domain) {
+      checklists = checklists.filter(checklist => checklist.domain === domain);
+    }
+
+    res.json(checklists);
+  } catch (err) {
+    console.error('Get learning checklists error:', err);
+    res.status(500).json({ error: 'Failed to get learning checklists' });
+  }
+});
+
+// User Profile and Dashboard State endpoints
+
+// Save dashboard state
+app.post('/user/dashboard-state', authMiddleware, async (req, res) => {
+  try {
+    const dashboardState = req.body;
+    console.log('Saving dashboard state for user:', req.user.id);
+    
+    const user = await User.findById(req.user.id).exec();
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Initialize enhanced profile if it doesn't exist
+    if (!user.enhancedProfile) {
+      user.enhancedProfile = {};
+    }
+
+    // Save dashboard state
+    user.enhancedProfile.dashboardState = {
+      ...dashboardState,
+      lastVisited: new Date()
+    };
+
+    await user.save();
+    
+    console.log('Dashboard state saved successfully');
+    res.json({ success: true, dashboardState: user.enhancedProfile.dashboardState });
+  } catch (err) {
+    console.error('Save dashboard state error:', err);
+    res.status(500).json({ error: 'Failed to save dashboard state' });
+  }
+});
+
+// Get dashboard state
+app.get('/user/dashboard-state', authMiddleware, async (req, res) => {
+  try {
+    console.log('Getting dashboard state for user:', req.user.id);
+    
+    const user = await User.findById(req.user.id).select('enhancedProfile.dashboardState').exec();
+    if (!user || !user.enhancedProfile || !user.enhancedProfile.dashboardState) {
+      return res.status(404).json({ error: 'Dashboard state not found' });
+    }
+
+    res.json(user.enhancedProfile.dashboardState);
+  } catch (err) {
+    console.error('Get dashboard state error:', err);
+    res.status(500).json({ error: 'Failed to get dashboard state' });
+  }
+});
+
+// Save session progress
+app.post('/user/session-progress', authMiddleware, async (req, res) => {
+  try {
+    const sessionData = req.body;
+    console.log('Saving session progress for user:', req.user.id, sessionData.sessionId);
+    
+    const user = await User.findById(req.user.id).exec();
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Initialize enhanced profile if it doesn't exist
+    if (!user.enhancedProfile) {
+      user.enhancedProfile = {};
+    }
+
+    // Initialize session progress array if it doesn't exist
+    if (!user.enhancedProfile.sessionProgress) {
+      user.enhancedProfile.sessionProgress = [];
+    }
+
+    // Update or add session progress
+    const existingIndex = user.enhancedProfile.sessionProgress.findIndex(
+      s => s.sessionId === sessionData.sessionId
+    );
+    
+    if (existingIndex >= 0) {
+      user.enhancedProfile.sessionProgress[existingIndex] = sessionData;
+    } else {
+      user.enhancedProfile.sessionProgress.push(sessionData);
+    }
+
+    await user.save();
+    
+    console.log('Session progress saved successfully');
+    res.json({ success: true, sessionData });
+  } catch (err) {
+    console.error('Save session progress error:', err);
+    res.status(500).json({ error: 'Failed to save session progress' });
+  }
+});
+
+// Get session progress
+app.get('/user/session-progress/:sessionId', authMiddleware, async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    console.log('Getting session progress for user:', req.user.id, sessionId);
+    
+    const user = await User.findById(req.user.id).select('enhancedProfile.sessionProgress').exec();
+    if (!user || !user.enhancedProfile || !user.enhancedProfile.sessionProgress) {
+      return res.status(404).json({ error: 'Session progress not found' });
+    }
+
+    const sessionProgress = user.enhancedProfile.sessionProgress.find(
+      s => s.sessionId === sessionId
+    );
+
+    if (!sessionProgress) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    res.json(sessionProgress);
+  } catch (err) {
+    console.error('Get session progress error:', err);
+    res.status(500).json({ error: 'Failed to get session progress' });
+  }
+});
+
+// Get user's complete profile data
+app.get('/user/complete-profile', authMiddleware, async (req, res) => {
+  try {
+    console.log('Getting complete profile for user:', req.user.id);
+    
+    const user = await User.findById(req.user.id).select('-passwordHash').exec();
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Update last login date
+    user.lastLoginDate = new Date();
+    await user.save();
+
+    const profileData = {
+      id: user._id,
+      username: user.username,
+      accessLevel: user.accessLevel,
+      createdAt: user.createdAt,
+      lastLoginDate: user.lastLoginDate,
+      enhancedProfile: user.enhancedProfile
+    };
+
+    console.log('Complete profile loaded successfully');
+    res.json(profileData);
+  } catch (err) {
+    console.error('Get complete profile error:', err);
+    res.status(500).json({ error: 'Failed to get complete profile' });
+  }
+});
+
+// Sync progress data
+app.post('/user/sync-progress', authMiddleware, async (req, res) => {
+  try {
+    const progressData = req.body;
+    console.log('Syncing progress data for user:', req.user.id);
+    
+    const user = await User.findById(req.user.id).exec();
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Initialize enhanced profile if it doesn't exist
+    if (!user.enhancedProfile) {
+      user.enhancedProfile = {};
+    }
+
+    // Merge progress data
+    user.enhancedProfile.learningProgress = {
+      ...user.enhancedProfile.learningProgress,
+      ...progressData,
+      updatedAt: new Date()
+    };
+
+    await user.save();
+    
+    console.log('Progress data synced successfully');
+    res.json({ success: true, learningProgress: user.enhancedProfile.learningProgress });
+  } catch (err) {
+    console.error('Sync progress error:', err);
+    res.status(500).json({ error: 'Failed to sync progress data' });
   }
 });
 

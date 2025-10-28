@@ -6,6 +6,7 @@ import { CareerDashboard } from '@/pages/CareerDashboard'
 import { CareerDetails } from '@/pages/CareerDetails'
 import { CareerPathGenerator } from '@/pages/CareerPathGenerator'
 import { LearningRoadmap } from '@/pages/LearningRoadmap'
+import { LearningResourcesPage } from '@/pages/LearningResourcesPage'
 import SignIn from '@/pages/SignIn'
 import SignUp from '@/pages/SignUp'
 import Profile from '@/pages/Profile'
@@ -28,13 +29,14 @@ const AppRoutes = () => {
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
       <Route path="/details" element={<Details />} />
-      <Route path="/assessment" element={<CareerAssessment />} />
-      <Route path="/dashboard" element={<ProtectedRoute><CareerDashboard /></ProtectedRoute>} />
+      <Route path="/assessment" element={<ProtectedRoute><CareerAssessment /></ProtectedRoute>} />
+      <Route path="/dashboard" element={<ProtectedRoute requiresEnhancedProfile={true}><CareerDashboard /></ProtectedRoute>} />
       <Route path="/career-dashboard" element={<CareerDashboard />} />
-      <Route path="/progress-dashboard" element={<ProtectedRoute><ProgressDashboard /></ProtectedRoute>} />
+      <Route path="/progress-dashboard" element={<ProtectedRoute requiresEnhancedProfile={true}><ProgressDashboard /></ProtectedRoute>} />
       <Route path="/career-details/:id" element={<CareerDetails />} />
       <Route path="/career-path-generator" element={<CareerPathGenerator />} />
       <Route path="/learning-roadmap" element={<LearningRoadmap />} />
+      <Route path="/learning-resources" element={<ProtectedRoute requiresEnhancedProfile={true}><LearningResourcesPage /></ProtectedRoute>} />
 
       <Route path="/achievements" element={<ProtectedRoute><AchievementsPage /></ProtectedRoute>} />
       <Route path="/resume-upload" element={<ProtectedRoute><ResumeUpload /></ProtectedRoute>} />

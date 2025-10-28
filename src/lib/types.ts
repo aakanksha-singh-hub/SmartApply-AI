@@ -488,6 +488,7 @@ export interface UserStore {
   
   // Utility actions
   clearData: () => void;
+  logout: () => Promise<boolean>;
   exportData: () => string;
   importData: (data: string) => void;
 }
