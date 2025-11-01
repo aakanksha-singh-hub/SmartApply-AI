@@ -154,6 +154,7 @@ export const LearningResourcesPage: React.FC = () => {
     <div 
       className="min-h-screen py-20"
       style={{
+        backgroundColor: '#e0f2f1',
         backgroundImage: "url('/bg-image.svg')",
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -176,10 +177,8 @@ export const LearningResourcesPage: React.FC = () => {
               <NBButton
               onClick={handleExportPDF}
               variant="secondary"
-                className="flex items-center space-x-2"
               >
-              <Download className="w-4 h-4" />
-              <span>Export as PDF</span>
+              Export as PDF
               </NBButton>
           </div>
               

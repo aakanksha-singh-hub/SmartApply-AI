@@ -118,7 +118,6 @@ export const GlassNavbar: React.FC<GlassNavbarProps> = ({ onGetStarted }) => {
                   <span className="text-xl font-bold text-black tracking-tight">
                     SmartApply AI
                   </span>
-                  <p className="text-xs text-black/70 hidden sm:block">AI Career Mentor</p>
                 </div>
               </div>
 

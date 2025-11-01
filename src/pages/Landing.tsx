@@ -201,13 +201,13 @@ export const Landing = () => {
       {/* How It Works Section */}
       <section id="about" className="py-20 px-4 bg-card/30 backdrop-blur-sm relative border-t border-border/20">
         <BGPattern variant="dots" mask="fade-y" size={24} fill="rgba(34, 197, 94, 0.06)" />
-        <div className="max-w-7xl mx-auto relative">
+        <div className="max-w-6xl mx-auto relative">
           <h2 className="text-4xl font-bold text-foreground text-center mb-16" style={{fontFamily: 'Playfair Display, serif'}}>
             How It Works
           </h2>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8 justify-items-center">
             <NBCard className="text-center group hover:scale-105 transition-all duration-300 hover:shadow-xl border-border/50 bg-card/50 backdrop-blur-sm p-8">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-purple-800 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
                 <span className="text-3xl font-bold text-white">1</span>
               </div>
               <h3 className="text-2xl font-bold text-foreground mb-4 group-hover:text-primary transition-colors" style={{fontFamily: 'Playfair Display, serif'}}>
@@ -221,8 +221,8 @@ export const Landing = () => {
             </NBCard>
 
             <NBCard className="text-center group hover:scale-105 transition-all duration-300 hover:shadow-xl border-border/50 bg-card/50 backdrop-blur-sm p-8">
-              <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <span className="text-3xl font-bold text-primary-foreground">2</span>
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-purple-800 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <span className="text-3xl font-bold text-white">2</span>
               </div>
               <h3 className="text-2xl font-bold text-foreground mb-4 group-hover:text-primary transition-colors" style={{fontFamily: 'Playfair Display, serif'}}>
                 See Your Career Path
@@ -234,7 +234,7 @@ export const Landing = () => {
             </NBCard>
 
             <NBCard className="text-center group hover:scale-105 transition-all duration-300 hover:shadow-xl border-border/50 bg-card/50 backdrop-blur-sm p-8">
-              <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-purple-800 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
                 <span className="text-3xl font-bold text-white">3</span>
               </div>
               <h3 className="text-2xl font-bold text-foreground mb-4 group-hover:text-primary transition-colors" style={{fontFamily: 'Playfair Display, serif'}}>
