@@ -10,7 +10,7 @@ This directory contains a comprehensive testing suite for the SmartApply AI care
 - **Requirements Covered**: 1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3
 - **Test Categories**:
   - Authentication check functionality
-  - Login with credentials and demo mode
+  - Login with credentials
   - Sign up with validation
   - Simple logout confirmation without warnings
   - Protected route requirements

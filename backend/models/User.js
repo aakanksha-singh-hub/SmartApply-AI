@@ -42,7 +42,7 @@ const UserSchema = new Schema({
         period: String
       },
       growthProspects: String,
-      requiredSkills: [String],
+      requiredSkills: Schema.Types.Mixed, // Changed from [String] to Mixed to accept both strings and skill objects
       recommendedPath: Schema.Types.Mixed,
       jobMarketData: Schema.Types.Mixed,
       primaryCareer: String,

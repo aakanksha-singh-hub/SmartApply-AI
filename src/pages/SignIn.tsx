@@ -70,22 +70,22 @@ const SignIn: React.FC = () => {
                 const isProfileComplete = (profile: any) => {
                     if (!profile) return false
                     
-                    // Check for essential fields that indicate a completed assessment
-                    const hasEssentialFields = !!(
-                        profile.achievements !== undefined &&
-                        profile.badges !== undefined &&
-                        profile.level !== undefined &&
-                        profile.careerRecommendations !== undefined &&
-                        profile.progressData !== undefined
-                    )
-                    
-                    // Also check if they have at least one career recommendation (indicates completed assessment)
-                    const hasCareerData = !!(
+                    // NEW: Less strict check - only look for actual career data, not gamification fields
+                    // A complete profile has EITHER:
+                    // 1. Career recommendations (generated roadmap)
+                    // 2. Career interest (at minimum)
+                    const hasCareerRecommendations = !!(
                         profile.careerRecommendations && 
                         profile.careerRecommendations.length > 0
                     )
                     
-                    return hasEssentialFields && hasCareerData
+                    const hasCareerInterest = !!(
+                        profile.careerInterest && 
+                        profile.careerInterest.trim().length > 0
+                    )
+                    
+                    // Profile is complete if it has recommendations OR at least a career interest
+                    return hasCareerRecommendations || hasCareerInterest
                 }
                 
                 let hasEnhancedProfile = false
@@ -119,11 +119,9 @@ const SignIn: React.FC = () => {
                             component: 'SignIn',
                             action: 'profile_incomplete_db',
                             metadata: {
-                                hasAchievements: databaseProfile.achievements !== undefined,
-                                hasBadges: databaseProfile.badges !== undefined,
-                                hasLevel: databaseProfile.level !== undefined,
-                                hasRecommendations: databaseProfile.careerRecommendations !== undefined,
-                                hasProgressData: databaseProfile.progressData !== undefined,
+                                hasCareerInterest: !!databaseProfile.careerInterest,
+                                careerInterest: databaseProfile.careerInterest,
+                                hasRecommendations: !!databaseProfile.careerRecommendations,
                                 recommendationsCount: databaseProfile.careerRecommendations?.length || 0
                             }
                         });
@@ -256,26 +254,7 @@ const SignIn: React.FC = () => {
                             <div className="space-y-3">
                                 <NBButton type="submit" className="w-full" disabled={loading}>{loading ? 'Signing in...' : 'Sign In'}</NBButton>
                                 
-                                {import.meta.env.MODE === 'development' && (
-                                    <div className="text-center">
-                                        <div className="text-xs text-gray-500 mb-2">Development Mode</div>
-                                        <NBButton 
-                                            type="button" 
-                                            variant="secondary" 
-                                            className="w-full text-sm" 
-                                            onClick={() => {
-                                                setUsername('demo');
-                                                setPassword('Demo123!@');
-                                            }}
-                                            disabled={loading}
-                                        >
-                                            Fill Demo Credentials
-                                        </NBButton>
-                                        <div className="text-xs text-gray-400 mt-1">
-                                            Username: demo | Password: Demo123!@
-                                        </div>
-                                    </div>
-                                )}
+
                             </div>
                         </form>
                     </NBCard>
@@ -286,3 +265,4 @@ const SignIn: React.FC = () => {
 }
 
 export default SignIn
+

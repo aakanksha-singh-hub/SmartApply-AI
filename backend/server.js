@@ -120,28 +120,50 @@ app.post('/user/enhanced-profile', authMiddleware, async (req, res) => {
     enhancedProfileData.profileCreatedAt = new Date();
     enhancedProfileData.profileUpdatedAt = new Date();
     
-    console.log('Saving enhanced profile for user:', req.user.id);
-    console.log('Enhanced profile data keys:', Object.keys(enhancedProfileData));
+    console.log('=== SAVING ENHANCED PROFILE ===');
+    console.log('User ID:', req.user.id);
+    console.log('Profile data keys:', Object.keys(enhancedProfileData));
+    console.log('Profile name:', enhancedProfileData.name);
+    console.log('Career interest:', enhancedProfileData.careerInterest);
+    console.log('Has recommendations:', !!enhancedProfileData.careerRecommendations);
+    console.log('Recommendations count:', enhancedProfileData.careerRecommendations?.length || 0);
     
     // First, find the user
     const user = await User.findById(req.user.id).exec();
     if (!user) {
+      console.error('❌ User not found:', req.user.id);
       return res.status(404).json({ error: 'User not found' });
     }
+    
+    console.log('✓ User found:', user.username);
     
     // Set the enhanced profile directly
     user.enhancedProfile = enhancedProfileData;
     
+    console.log('Attempting to save to MongoDB...');
+    
     // Save the user
     await user.save();
     
-    console.log('Enhanced profile saved successfully');
+    console.log('✅ Enhanced profile saved successfully!');
+    console.log('Profile careerInterest:', user.enhancedProfile.careerInterest);
     res.json(user.enhancedProfile);
   } catch (err) {
-    console.error('Save enhanced profile error:', err);
-    console.error('Error details:', err.message);
+    console.error('❌❌❌ SAVE ENHANCED PROFILE ERROR ❌❌❌');
+    console.error('Error type:', err.name);
+    console.error('Error message:', err.message);
+    console.error('Error code:', err.code);
+    if (err.errors) {
+      console.error('Validation errors:', JSON.stringify(err.errors, null, 2));
+    }
+    console.error('Full error:', err);
     console.error('Stack trace:', err.stack);
-    res.status(500).json({ error: 'Failed to save enhanced profile', details: err.message });
+    res.status(500).json({ 
+      error: 'Failed to save enhanced profile', 
+      details: err.message,
+      code: err.code,
+      name: err.name
+    });
   }
 });
 

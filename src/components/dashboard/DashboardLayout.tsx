@@ -16,7 +16,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 }) => {
   return (
     <div className={cn(
-      "min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30",
+      "min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 pt-20",
       className
     )}>
       <div className="container mx-auto px-4 py-6 max-w-7xl">

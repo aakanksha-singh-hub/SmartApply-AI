@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Clock, Star, CheckCircle, Play, ExternalLink, Target, GraduationCap } from 'lucide-react';
+import { BookOpen, Clock, Star, CheckCircle, Play, ExternalLink, Target } from 'lucide-react';
 import { NBCard } from '@/components/NBCard';
 import { NBButton } from '@/components/NBButton';
 import { EnhancedUserProfile } from '@/lib/types';
@@ -26,12 +26,111 @@ export const LearningResourcesSection: React.FC<LearningResourcesSectionProps> =
   const [progressStats, setProgressStats] = useState<ProgressStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Determine domain from profile
-  const domain = profile.careerRecommendations?.[0]?.primaryCareer?.toLowerCase().includes('technology') 
-    ? 'technology-computer-science' 
-    : profile.careerInterest?.toLowerCase().includes('technology')
-    ? 'technology-computer-science'
-    : 'business-management'; // Default fallback
+  // Determine domain from profile with comprehensive mapping
+  const getDomainFromCareer = (careerInterest: string): string => {
+    const career = careerInterest.toLowerCase();
+    
+    // Cybersecurity (check FIRST - very specific)
+    if (career.includes('security') || career.includes('penetration') || career.includes('pentester') ||
+        career.includes('ethical hack') || career.includes('cybersec') || career.includes('infosec')) {
+      return 'technology-computer-science';
+    }
+    
+    // Data Science & AI (check before general tech)
+    if (career.includes('data scien') || career.includes('ml engineer') ||
+        career.includes('machine learning') || career.includes('ai engineer')) {
+      return 'technology-computer-science';
+    }
+    
+    // Healthcare
+    if (career.includes('doctor') || career.includes('nurse') || career.includes('physician') ||
+        career.includes('medic') || career.includes('healthcare') || career.includes('clinical') ||
+        career.includes('medical')) {
+      return 'healthcare';
+    }
+    
+    // Legal
+    if (career.includes('lawyer') || career.includes('attorney') || career.includes('legal') ||
+        career.includes('paralegal') || career.includes('law ')) {
+      return 'legal';
+    }
+    
+    // Education
+    if (career.includes('teacher') || career.includes('professor') || career.includes('educator') ||
+        career.includes('instructor') || career.includes('tutor')) {
+      return 'education';
+    }
+    
+    // Finance & Accounting
+    if (career.includes('accountant') || career.includes('cpa') || career.includes('financial analyst') ||
+        career.includes('finance ') || career.includes('investment') || career.includes('banker') ||
+        career.includes('auditor')) {
+      return 'finance';
+    }
+    
+    // Construction & Trades
+    if (career.includes('construction') || career.includes('builder') || career.includes('carpenter') ||
+        career.includes('electrician') || career.includes('plumber') || career.includes('contractor')) {
+      return 'construction';
+    }
+    
+    // Engineering (non-software, check before general "engineer")
+    if ((career.includes('engineer') && !career.includes('software') && !career.includes('developer')) ||
+        career.includes('mechanical') || career.includes('civil eng') || 
+        career.includes('electrical eng') || career.includes('structural')) {
+      return 'engineering';
+    }
+    
+    // Technology & Computer Science (after checking for non-software engineers)
+    if (career.includes('software') || career.includes('developer') || career.includes('programmer') || 
+        career.includes('tech') || career.includes('devops') || career.includes('cloud') || 
+        career.includes('backend') || career.includes('frontend') || career.includes('fullstack') || 
+        career.includes('mobile') || career.includes('coding')) {
+      return 'technology-computer-science';
+    }
+    
+    // Design, Art & Creative Industries
+    if (career.includes('motion') || career.includes('animation') || career.includes('graphic') ||
+        career.includes('design') || career.includes('visual') || career.includes('illustrat') ||
+        career.includes('artist') || career.includes('3d') || career.includes('vfx') ||
+        career.includes('video edit') || career.includes('creative') || career.includes('art')) {
+      return 'design-art-creative';
+    }
+    
+    // Communication, Media & Marketing
+    if (career.includes('marketing') || career.includes('media') || career.includes('social media') ||
+        career.includes('content') || career.includes('advertising') || career.includes('brand') ||
+        career.includes('film') || career.includes('cinemat') || career.includes('photo')) {
+      return 'communication-media-marketing';
+    }
+    
+    // Architecture
+    if (career.includes('architect') && !career.includes('software')) {
+      return 'design-art-creative';
+    }
+    
+    // Music & Audio
+    if (career.includes('music') || career.includes('audio') || career.includes('sound')) {
+      return 'communication-media-marketing';
+    }
+    
+    // Science & Research
+    if (career.includes('scientist') || career.includes('researcher') || career.includes('lab')) {
+      return 'science';
+    }
+    
+    // Data Analyst / Business Analyst (after data science check)
+    if (career.includes('data analyst') || career.includes('business analyst')) {
+      return 'business-management';
+    }
+    
+    // Business & Management (default)
+    return 'business-management';
+  };
+
+  const domain = getDomainFromCareer(
+    profile.careerInterest || profile.careerRecommendations?.[0]?.primaryCareer || 'business'
+  );
 
   const userId = profile.name || 'anonymous';
 
@@ -43,8 +142,50 @@ export const LearningResourcesSection: React.FC<LearningResourcesSectionProps> =
     try {
       setLoading(true);
       
-      // Load personalized recommendations
-      const recs = await LearningResourcesService.getRecommendations(profile, domain, 4);
+      // Get experience level from profile
+      const yearsExp = profile.yearsOfExperience || 0;
+      const experienceLevel: 'Entry' | 'Junior' | 'Mid' | 'Senior' = 
+        yearsExp === 0 ? 'Entry' :
+        yearsExp <= 2 ? 'Junior' :
+        yearsExp <= 5 ? 'Mid' : 'Senior';
+      
+      // Load REAL personalized resources using RealLearningResourcesService
+      const { RealLearningResourcesService } = await import('@/lib/services/realLearningResourcesService');
+      const realResources = RealLearningResourcesService.getPersonalizedResources(
+        profile.careerInterest || 'Software Developer',
+        experienceLevel,
+        profile.skills || []
+      );
+      
+      // Convert to recommendation format (take top 4 highest relevance)
+      const sortedResources = realResources.sort((a, b) => b.relevanceScore - a.relevanceScore);
+      const topResources = sortedResources.slice(0, 4);
+      
+      const recs = topResources.map(resource => ({
+        resource: {
+          id: resource.id,
+          title: resource.title,
+          domain: domain,
+          type: 'course' as const,
+          provider: resource.provider,
+          url: resource.url,
+          difficulty: resource.difficulty.toLowerCase() as 'beginner' | 'intermediate' | 'advanced',
+          duration: resource.duration,
+          completed: false,
+          skills: resource.skills
+        },
+        score: resource.relevanceScore,
+        reasons: [resource.description],
+        matchedSkills: resource.skills.filter(skill => 
+          profile.skills?.some(userSkill => 
+            userSkill.toLowerCase().includes(skill.toLowerCase()) ||
+            skill.toLowerCase().includes(userSkill.toLowerCase())
+          )
+        ),
+        difficulty: resource.difficulty.toLowerCase() as 'beginner' | 'intermediate' | 'advanced',
+        estimatedBenefit: resource.relevanceScore
+      }));
+      
       setRecommendations(recs);
 
       // Load progress statistics
@@ -135,7 +276,7 @@ export const LearningResourcesSection: React.FC<LearningResourcesSectionProps> =
 
   return (
     <NBCard className="p-6 bg-gradient-to-r from-green-50/90 to-emerald-50/90 border-green-200">
-      <div className="flex justify-between items-start mb-6">
+      <div className="mb-6">
         <div>
           <h3 className="text-xl font-semibold text-green-900 mb-1">
             Learning Resources
@@ -144,13 +285,6 @@ export const LearningResourcesSection: React.FC<LearningResourcesSectionProps> =
             Personalized recommendations for {profile.careerInterest || 'your career path'}
           </p>
         </div>
-        <NBButton
-          variant="ghost"
-          onClick={onViewAllResources}
-          className="text-green-600 hover:bg-green-100"
-        >
-          View All
-        </NBButton>
       </div>
 
       {/* Progress Overview */}
@@ -249,19 +383,19 @@ export const LearningResourcesSection: React.FC<LearningResourcesSectionProps> =
                   {resource.url && (
                     <NBButton
                       variant="ghost"
-                      className="text-blue-600 hover:bg-blue-100 p-2"
+                      className="text-blue-600 hover:bg-blue-100 px-3 py-1 text-sm"
                       onClick={() => window.open(resource.url, '_blank')}
                     >
-                      <ExternalLink className="h-4 w-4" />
+                      View
                     </NBButton>
                   )}
                   {!resource.completed && (
                     <NBButton
                       variant="primary"
                       onClick={() => handleResourceComplete(resource.id)}
-                      className="bg-green-500 text-white hover:bg-green-600 text-sm px-3 py-1"
+                      className="bg-green-500 text-white hover:bg-green-600 text-sm px-3 py-1 font-medium"
                     >
-                      Start Learning
+                      Start
                     </NBButton>
                   )}
                 </div>
@@ -273,30 +407,14 @@ export const LearningResourcesSection: React.FC<LearningResourcesSectionProps> =
 
       {/* Quick Actions */}
       <div className="mt-6 pt-4 border-t border-green-200">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex justify-center">
           <NBButton
-            variant="ghost"
+            variant="primary"
             onClick={onViewAllResources}
-            className="text-green-600 hover:bg-green-100 text-sm"
+            className="bg-green-600 text-white hover:bg-green-700 px-6 py-2"
           >
-            <BookOpen className="h-4 w-4 mr-1" />
-            Browse All Resources
-          </NBButton>
-          <NBButton
-            variant="ghost"
-            onClick={onViewAllResources}
-            className="text-green-600 hover:bg-green-100 text-sm"
-          >
-            <GraduationCap className="h-4 w-4 mr-1" />
-            Study Guides
-          </NBButton>
-          <NBButton
-            variant="ghost"
-            onClick={onViewAllResources}
-            className="text-green-600 hover:bg-green-100 text-sm"
-          >
-            <Target className="h-4 w-4 mr-1" />
-            Learning Checklist
+            <BookOpen className="h-4 w-4 mr-2" />
+            Learning Resources
           </NBButton>
         </div>
       </div>

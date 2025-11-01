@@ -14,8 +14,40 @@ const SignUp: React.FC = () => {
     const [loading, setLoading] = useState(false)
     const navigate = useNavigate()
 
+    // Password validation
+    const validatePassword = () => {
+        const errors: string[] = []
+        
+        if (password.length < 6) {
+            errors.push('Password: Must be at least 6 characters long')
+        }
+        
+        if (!/[A-Z]/.test(password) && password.length > 0) {
+            errors.push('Password: Should contain at least one uppercase letter or number')
+        }
+        
+        if (!/[0-9]/.test(password) && !/[A-Z]/.test(password) && password.length > 0) {
+            errors.push('Password: Should contain at least one uppercase letter or number')
+        }
+        
+        if (password !== confirm && confirm.length > 0) {
+            errors.push('Passwords do not match')
+        }
+        
+        return errors
+    }
+
+    const validationErrors = validatePassword()
+    const isFormValid = validationErrors.length === 0 && password.length >= 6 && password === confirm && username.length > 0
+
     const submit = async (e: React.FormEvent) => {
         e.preventDefault()
+        
+        // Prevent submission if validation fails
+        if (!isFormValid) {
+            validationErrors.forEach(error => toast.error(error, { duration: 3000 }))
+            return
+        }
         
         setLoading(true)
         console.log('=== Sign Up Process Started ===')
@@ -74,12 +106,24 @@ const SignUp: React.FC = () => {
                             <div>
                                 <label className="block text-sm font-medium">Password</label>
                                 <input required type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full mt-1 px-3 py-2 border rounded-md" />
+                                <p className="text-xs text-gray-500 mt-1">At least 6 characters with uppercase letter or number</p>
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium">Confirm password</label>
                                 <input required type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} className="w-full mt-1 px-3 py-2 border rounded-md" />
                             </div>
+
+                            {validationErrors.length > 0 && (password.length > 0 || confirm.length > 0) && (
+                                <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                                    <p className="text-sm font-medium text-red-800 mb-1">Please fix {validationErrors.length} validation error{validationErrors.length > 1 ? 's' : ''}:</p>
+                                    <ul className="text-xs text-red-700 list-disc list-inside space-y-1">
+                                        {validationErrors.map((error, idx) => (
+                                            <li key={idx}>{error}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
 
                             <div className="flex items-center justify-between">
                                 <div className="text-sm">
@@ -88,7 +132,13 @@ const SignUp: React.FC = () => {
                             </div>
 
                             <div>
-                                <NBButton type="submit" className="w-full" disabled={loading}>{loading ? 'Creating...' : 'Create account'}</NBButton>
+                                <NBButton 
+                                    type="submit" 
+                                    className="w-full" 
+                                    disabled={loading || !isFormValid}
+                                >
+                                    {loading ? 'Creating...' : 'Create account'}
+                                </NBButton>
                             </div>
                         </form>
                     </NBCard>

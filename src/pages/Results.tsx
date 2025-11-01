@@ -4,15 +4,12 @@ import { NBCard } from '../components/NBCard';
 import { NBButton } from '../components/NBButton';
 import { FlowChart } from '../components/FlowChart';
 import { SummaryPanel } from '../components/SummaryPanel';
-import { GridBackground } from '../components/ui/grid-background';
-import { DotBackground } from '../components/ui/dot-background';
 import { useUserStore } from '../lib/stores/userStore';
 import { CareerService } from '../lib/services/careerService';
 import { EnhancedProfileService } from '../lib/services/enhancedProfileService';
 import { ErrorHandlingService } from '../lib/services/errorHandlingService';
 import { AlternativeCareer } from '../lib/types';
 import { toast } from 'sonner';
-import { ArrowLeft, RefreshCw, Loader2, Target } from 'lucide-react';
 import { debugLogger } from '../lib/utils/debugLogger';
 
 export const Results = () => {
@@ -51,6 +48,33 @@ export const Results = () => {
         streakType: 'daily' as const,
         streakGoal: 7
       },
+      learningProgress: {
+        userId: profile.name || 'user',
+        domain: profile.careerInterest || 'general',
+        subfield: '',
+        overallProgress: 0,
+        completedResources: [],
+        inProgressResources: [],
+        skillsAcquired: [],
+        timeSpent: 0,
+        studyStreak: 0,
+        lastActivityDate: new Date(),
+        milestones: [],
+        achievements: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      learningChecklists: [],
+      learningResourcesCompleted: [],
+      dashboardState: {
+        selectedDomain: profile.careerInterest || '',
+        selectedJobRole: profile.careerInterest || '',
+        currentView: 'roadmap' as const,
+        scrollPosition: 0,
+        expandedSections: [],
+        lastVisited: new Date()
+      },
+      sessionProgress: [],
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -204,87 +228,17 @@ export const Results = () => {
 
   return (
     <div className="min-h-screen light-rays-bg relative">
-      {/* Header */}
-      <header className="border-b border-border/20 bg-card/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => navigate('/')}
-                className="p-2 hover:bg-accent/20 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 text-foreground" />
-              </button>
-              <h1 className="text-2xl font-bold text-foreground">
-                Your Career Path
-              </h1>
-            </div>
-            <div className="flex space-x-2">
-              {!enhancedProfile && (
-                <NBButton
-                  onClick={createEnhancedProfile}
-                  className="flex items-center space-x-2 bg-green-600 hover:bg-green-700"
-                >
-                  <Target className="w-4 h-4" />
-                  <span>Save Profile & Continue</span>
-                </NBButton>
-              )}
-              {enhancedProfile && (
-                <NBButton
-                  onClick={() => navigate('/dashboard')}
-                  className="flex items-center space-x-2"
-                >
-                  <Target className="w-4 h-4" />
-                  <span>Go to Dashboard</span>
-                </NBButton>
-              )}
-              {originalResults && results !== originalResults && (
-                <NBButton
-                  variant="secondary"
-                  onClick={handleBackToOriginal}
-                  className="flex items-center space-x-2 border-border/50"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Back to Original</span>
-                </NBButton>
-              )}
-              <NBButton
-                variant="secondary"
-                onClick={handleStartOver}
-                className="flex items-center space-x-2"
-              >
-                <RefreshCw className="w-4 h-4" />
-                <span>Start Over</span>
-              </NBButton>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
-      <div className="py-8 px-4 relative">
-        <GridBackground 
-          size={40} 
-          lineColor="rgba(139, 92, 246, 0.15)" 
-          opacity={0.2}
-          className="absolute inset-0"
-        >
-          <div />
-        </GridBackground>
-        <DotBackground 
-          size={60} 
-          dotColor="rgba(34, 197, 94, 0.1)" 
-          opacity={0.3}
-          className="absolute inset-0"
-        >
-          <div />
-        </DotBackground>
+      <div className="pt-24 pb-8 px-4 relative">
         <div className="max-w-7xl mx-auto relative">
           {/* Summary Panel - Full Width */}
           <div className="mb-8">
             <SummaryPanel 
               recommendation={results} 
-              userName={profile.name} 
+              userName={profile.name}
+              onDashboardClick={() => navigate('/dashboard')}
+              onStartOverClick={handleStartOver}
+              showDashboardButton={!!enhancedProfile}
             />
           </div>
 

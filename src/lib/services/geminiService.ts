@@ -72,7 +72,7 @@ export class GeminiService {
     enabled: true,
     ttl: 24 * 60 * 60 * 1000, // 24 hours
     maxSize: 100, // Max cached responses
-    compressionEnabled: true
+    compressionEnabled: true,
   }
 
   /**
@@ -86,13 +86,18 @@ export class GeminiService {
       skills: request.skills.sort().join(','),
       educationLevel: request.educationLevel,
     }
-    return `gemini_roadmap_${btoa(JSON.stringify(keyData)).replace(/[^a-zA-Z0-9]/g, '')}`
+    return `gemini_roadmap_${btoa(JSON.stringify(keyData)).replace(
+      /[^a-zA-Z0-9]/g,
+      ''
+    )}`
   }
 
   /**
    * Enhanced caching with multi-layer cache service (Requirements 10.1, 10.2)
    */
-  private static async getCachedResponse<T>(cacheKey: string): Promise<T | null> {
+  private static async getCachedResponse<T>(
+    cacheKey: string
+  ): Promise<T | null> {
     if (!this.cacheConfig.enabled) return null
 
     try {
@@ -111,7 +116,10 @@ export class GeminiService {
   /**
    * Enhanced caching with compression and TTL (Requirements 10.1, 10.2)
    */
-  private static async setCachedResponse<T>(cacheKey: string, data: T): Promise<void> {
+  private static async setCachedResponse<T>(
+    cacheKey: string,
+    data: T
+  ): Promise<void> {
     if (!this.cacheConfig.enabled) return
 
     try {
@@ -171,7 +179,7 @@ export class GeminiService {
     request: RoadmapRequest
   ): Promise<CareerRecommendation> {
     const operationId = `gemini_roadmap_${request.jobRole}_${request.experienceLevel}`
-    
+
     try {
       this.validateConfiguration()
 
@@ -179,21 +187,28 @@ export class GeminiService {
       loadingService.setLoading(operationId, true, {
         message: 'Generating personalized career roadmap...',
         stage: 'initialization',
-        progress: 10
+        progress: 10,
       })
 
       // Check cache first with enhanced caching
       const cacheKey = this.generateCacheKey(request)
-      const cachedResult = await this.getCachedResponse<CareerRecommendation>(cacheKey)
+      const cachedResult = await this.getCachedResponse<CareerRecommendation>(
+        cacheKey
+      )
       if (cachedResult) {
         loadingService.setLoading(operationId, false, {
           progress: 100,
-          message: 'Roadmap loaded from cache'
+          message: 'Roadmap loaded from cache',
         })
         return cachedResult
       }
 
-      loadingService.updateProgress(operationId, 30, 'Preparing AI request...', 'preparation')
+      loadingService.updateProgress(
+        operationId,
+        30,
+        'Preparing AI request...',
+        'preparation'
+      )
 
       console.log('🚀 Generating career roadmap with Gemini AI:', {
         domain: request.domain,
@@ -201,7 +216,12 @@ export class GeminiService {
         experienceLevel: request.experienceLevel,
       })
 
-      loadingService.updateProgress(operationId, 50, 'Generating roadmap with AI...', 'generation')
+      loadingService.updateProgress(
+        operationId,
+        50,
+        'Generating roadmap with AI...',
+        'generation'
+      )
 
       const roadmap = await this.withRetry(async () => {
         const prompt = this.buildRoadmapPrompt(request)
@@ -219,12 +239,22 @@ export class GeminiService {
         const response = await result.response
         const text = response.text()
 
-        loadingService.updateProgress(operationId, 80, 'Processing AI response...', 'processing')
+        loadingService.updateProgress(
+          operationId,
+          80,
+          'Processing AI response...',
+          'processing'
+        )
 
         return this.parseRoadmapResponse(text, request)
       }, 'roadmap generation')
 
-      loadingService.updateProgress(operationId, 90, 'Caching results...', 'caching')
+      loadingService.updateProgress(
+        operationId,
+        90,
+        'Caching results...',
+        'caching'
+      )
 
       // Cache the result with enhanced caching
       await this.setCachedResponse(cacheKey, roadmap)
@@ -232,13 +262,16 @@ export class GeminiService {
       loadingService.setLoading(operationId, false, {
         progress: 100,
         message: 'Career roadmap generated successfully',
-        stage: 'complete'
+        stage: 'complete',
       })
 
       return roadmap
     } catch (error) {
       console.error('Error generating career roadmap:', error)
-      loadingService.setError(operationId, `Failed to generate roadmap: ${(error as Error).message}`)
+      loadingService.setError(
+        operationId,
+        `Failed to generate roadmap: ${(error as Error).message}`
+      )
       return this.getFallbackRoadmap(request)
     }
   }
@@ -410,13 +443,126 @@ Generate a roadmap that helps the user progress from their current ${
     console.log('🔄 Using fallback roadmap generation')
 
     const fallbackRoadmaps = this.getFallbackRoadmapsByDomain()
-    const domainRoadmap =
-      fallbackRoadmaps[request.domain.toLowerCase()] || fallbackRoadmaps.default
+    
+    // Try to match by job role first (more specific)
+    const jobRoleLower = request.jobRole.toLowerCase()
+    let domainRoadmap = fallbackRoadmaps[jobRoleLower]
+    
+    // If not found, try domain
+    if (!domainRoadmap) {
+      const domainLower = request.domain.toLowerCase()
+      domainRoadmap = fallbackRoadmaps[domainLower]
+    }
+    
+    // Smart keyword matching for ALL career types (most specific first)
+    if (!domainRoadmap) {
+      // CYBERSECURITY (very specific - check first)
+      if (jobRoleLower.includes('security') || jobRoleLower.includes('penetration') || 
+          jobRoleLower.includes('pentester') || jobRoleLower.includes('ethical hack') || 
+          jobRoleLower.includes('cybersec') || jobRoleLower.includes('infosec')) {
+        domainRoadmap = fallbackRoadmaps['penetration tester'] || fallbackRoadmaps.cybersecurity || fallbackRoadmaps.security
+      }
+      // DATA SCIENCE (check before "analyst" for business)
+      else if (jobRoleLower.includes('data scien') || jobRoleLower.includes('ml engineer') || 
+               jobRoleLower.includes('machine learning') || jobRoleLower.includes('ai engineer')) {
+        domainRoadmap = fallbackRoadmaps['data scientist'] || fallbackRoadmaps['data science']
+      }
+      // HEALTHCARE
+      else if (jobRoleLower.includes('doctor') || jobRoleLower.includes('nurse') || 
+               jobRoleLower.includes('physician') || jobRoleLower.includes('medic') || 
+               jobRoleLower.includes('healthcare') || jobRoleLower.includes('clinical') ||
+               jobRoleLower.includes('medical')) {
+        domainRoadmap = fallbackRoadmaps.healthcare
+      }
+      // LEGAL
+      else if (jobRoleLower.includes('lawyer') || jobRoleLower.includes('attorney') || 
+               jobRoleLower.includes('legal') || jobRoleLower.includes('paralegal') || 
+               jobRoleLower.includes('law ')) {
+        domainRoadmap = fallbackRoadmaps.legal
+      }
+      // EDUCATION
+      else if (jobRoleLower.includes('teacher') || jobRoleLower.includes('professor') || 
+               jobRoleLower.includes('educator') || jobRoleLower.includes('instructor') || 
+               jobRoleLower.includes('tutor')) {
+        domainRoadmap = fallbackRoadmaps.education
+      }
+      // FINANCE & ACCOUNTING
+      else if (jobRoleLower.includes('accountant') || jobRoleLower.includes('cpa') || 
+               jobRoleLower.includes('financial analyst') || jobRoleLower.includes('finance ') || 
+               jobRoleLower.includes('investment') || jobRoleLower.includes('banker') ||
+               jobRoleLower.includes('auditor')) {
+        domainRoadmap = fallbackRoadmaps.finance
+      }
+      // CONSTRUCTION & TRADES
+      else if (jobRoleLower.includes('construction') || jobRoleLower.includes('builder') || 
+               jobRoleLower.includes('carpenter') || jobRoleLower.includes('electrician') || 
+               jobRoleLower.includes('plumber') || jobRoleLower.includes('contractor')) {
+        domainRoadmap = fallbackRoadmaps.construction
+      }
+      // ENGINEERING (non-software, check before general engineer)
+      else if ((jobRoleLower.includes('engineer') && 
+                !jobRoleLower.includes('software') && 
+                !jobRoleLower.includes('developer')) ||
+               jobRoleLower.includes('mechanical') || jobRoleLower.includes('civil eng') || 
+               jobRoleLower.includes('electrical eng') || jobRoleLower.includes('structural')) {
+        domainRoadmap = fallbackRoadmaps.engineering
+      }
+      // MOTION GRAPHICS / ANIMATION
+      else if (jobRoleLower.includes('motion') || jobRoleLower.includes('animation') || 
+               (jobRoleLower.includes('graphics') && (jobRoleLower.includes('artist') || jobRoleLower.includes('designer')))) {
+        domainRoadmap = fallbackRoadmaps['motion graphics'] || fallbackRoadmaps.animation
+      }
+      // GENERAL DESIGN
+      else if (jobRoleLower.includes('designer') || jobRoleLower.includes('design')) {
+        domainRoadmap = fallbackRoadmaps.designer
+      }
+      // STARTUP/ENTREPRENEUR
+      else if (jobRoleLower.includes('founder') || jobRoleLower.includes('entrepreneur') || 
+               jobRoleLower.includes('startup')) {
+        domainRoadmap = fallbackRoadmaps['startup founder']
+      }
+      // ENVIRONMENTAL/CLIMATE SCIENCE
+      else if (jobRoleLower.includes('climate') || jobRoleLower.includes('environmental')) {
+        domainRoadmap = fallbackRoadmaps['climate scientist'] || fallbackRoadmaps.environmental
+      }
+      // DATA/BUSINESS ANALYST (after data science check)
+      else if (jobRoleLower.includes('data analyst') || jobRoleLower.includes('business analyst')) {
+        domainRoadmap = fallbackRoadmaps.business
+      }
+      // GENERAL BUSINESS
+      else if (jobRoleLower.includes('business') || jobRoleLower.includes('manager') || 
+               jobRoleLower.includes('operations') || jobRoleLower.includes('sales') || 
+               jobRoleLower.includes('marketing')) {
+        domainRoadmap = fallbackRoadmaps.business
+      }
+      // SOFTWARE/TECH (check after engineering to avoid conflicts)
+      else if (jobRoleLower.includes('developer') || jobRoleLower.includes('software') || 
+               jobRoleLower.includes('programmer') || jobRoleLower.includes('coding')) {
+        domainRoadmap = fallbackRoadmaps.technology
+      }
+    }
+    
+    // Generic keyword matching as last resort
+    if (!domainRoadmap) {
+      const keywords = Object.keys(fallbackRoadmaps)
+      const matchingKey = keywords.find(key => {
+        if (jobRoleLower.includes(key) || key.includes(jobRoleLower)) return true
+        const jobWords = jobRoleLower.split(' ')
+        const keyWords = key.split(' ')
+        return jobWords.some(word => keyWords.includes(word) && word.length > 3)
+      })
+      domainRoadmap = matchingKey ? fallbackRoadmaps[matchingKey] : null
+    }
+    
+    // Fallback to default if still not found
+    if (!domainRoadmap) {
+      domainRoadmap = fallbackRoadmaps.default
+    }
 
     return {
       id: `fallback_roadmap_${Date.now()}`,
       title: request.jobRole,
-      description: `Fallback career roadmap for ${request.jobRole} in ${request.domain} (${request.experienceLevel} level)`,
+      description: `Career roadmap for ${request.jobRole} in ${request.domain} (${request.experienceLevel} level)`,
       fitScore: 75,
       salaryRange: this.getDefaultSalaryRange(request.experienceLevel),
       growthProspects: 'medium' as const,
@@ -427,7 +573,7 @@ Generate a roadmap that helps the user progress from their current ${
       relatedRoles: domainRoadmap.relatedRoles,
       careerPath: domainRoadmap.careerPath,
       alternatives: domainRoadmap.alternatives,
-      summary: `This is a fallback roadmap for ${request.jobRole}. For personalized recommendations, please ensure your internet connection is stable and try again.`,
+      summary: `Comprehensive career roadmap for ${request.jobRole} designed for ${request.experienceLevel} level professionals.`,
     }
   }
   /**
@@ -728,24 +874,104 @@ Generate a roadmap that helps the user progress from their current ${
   private static getFallbackRoadmapsByDomain(): Record<string, any> {
     return {
       technology: {
-        relatedRoles: [
-          'Software Developer',
-          'System Analyst',
-          'Technical Lead',
-          'DevOps Engineer',
-        ],
+        relatedRoles: ['Software Developer', 'System Analyst', 'Technical Lead', 'DevOps Engineer'],
         careerPath: this.getDefaultTechCareerPath(),
         alternatives: this.getDefaultTechAlternatives(),
       },
       business: {
-        relatedRoles: [
-          'Business Analyst',
-          'Project Manager',
-          'Operations Manager',
-          'Strategy Consultant',
-        ],
+        relatedRoles: ['Business Analyst', 'Project Manager', 'Operations Manager', 'Strategy Consultant'],
         careerPath: this.getDefaultBusinessCareerPath(),
         alternatives: this.getDefaultBusinessAlternatives(),
+      },
+      'startup founder': {
+        relatedRoles: ['Entrepreneur', 'CEO', 'Product Manager', 'Business Development'],
+        careerPath: this.getStartupFounderCareerPath(),
+        alternatives: this.getStartupFounderAlternatives(),
+      },
+      entrepreneur: {
+        relatedRoles: ['Startup Founder', 'Business Owner', 'Consultant', 'Investor'],
+        careerPath: this.getStartupFounderCareerPath(),
+        alternatives: this.getStartupFounderAlternatives(),
+      },
+      'data scientist': {
+        relatedRoles: ['Machine Learning Engineer', 'Data Analyst', 'AI Engineer', 'Business Intelligence Analyst'],
+        careerPath: this.getDataScienceCareerPath(),
+        alternatives: this.getDataScienceAlternatives(),
+      },
+      'data science': {
+        relatedRoles: ['Data Scientist', 'ML Engineer', 'Data Engineer', 'Analytics Manager'],
+        careerPath: this.getDataScienceCareerPath(),
+        alternatives: this.getDataScienceAlternatives(),
+      },
+      'penetration tester': {
+        relatedRoles: ['Security Analyst', 'Ethical Hacker', 'SOC Analyst', 'Security Engineer'],
+        careerPath: this.getCybersecurityCareerPath(),
+        alternatives: this.getCybersecurityAlternatives(),
+      },
+      cybersecurity: {
+        relatedRoles: ['Penetration Tester', 'Security Analyst', 'Incident Responder', 'Security Architect'],
+        careerPath: this.getCybersecurityCareerPath(),
+        alternatives: this.getCybersecurityAlternatives(),
+      },
+      security: {
+        relatedRoles: ['Cybersecurity Analyst', 'Penetration Tester', 'Security Engineer', 'InfoSec Specialist'],
+        careerPath: this.getCybersecurityCareerPath(),
+        alternatives: this.getCybersecurityAlternatives(),
+      },
+      'climate scientist': {
+        relatedRoles: ['Environmental Scientist', 'Sustainability Consultant', 'Research Scientist', 'Policy Advisor'],
+        careerPath: this.getClimateScientistCareerPath(),
+        alternatives: this.getClimateScientistAlternatives(),
+      },
+      environmental: {
+        relatedRoles: ['Climate Scientist', 'Conservation Biologist', 'Sustainability Manager', 'Environmental Engineer'],
+        careerPath: this.getClimateScientistCareerPath(),
+        alternatives: this.getClimateScientistAlternatives(),
+      },
+      'motion graphics': {
+        relatedRoles: ['3D Animator', 'VFX Artist', 'Video Editor', 'Creative Director'],
+        careerPath: this.getMotionGraphicsCareerPath(),
+        alternatives: this.getCreativeAlternatives(),
+      },
+      animation: {
+        relatedRoles: ['Motion Graphics Artist', '3D Modeler', 'Character Animator', 'VFX Compositor'],
+        careerPath: this.getMotionGraphicsCareerPath(),
+        alternatives: this.getCreativeAlternatives(),
+      },
+      designer: {
+        relatedRoles: ['UI/UX Designer', 'Graphic Designer', 'Product Designer', 'Brand Designer'],
+        careerPath: this.getDesignCareerPath(),
+        alternatives: this.getCreativeAlternatives(),
+      },
+      construction: {
+        relatedRoles: ['Project Manager', 'Site Supervisor', 'Civil Engineer', 'Safety Manager'],
+        careerPath: this.getConstructionCareerPath(),
+        alternatives: this.getConstructionAlternatives(),
+      },
+      healthcare: {
+        relatedRoles: ['Registered Nurse', 'Medical Assistant', 'Healthcare Administrator', 'Physician'],
+        careerPath: this.getHealthcareCareerPath(),
+        alternatives: this.getHealthcareAlternatives(),
+      },
+      education: {
+        relatedRoles: ['Teacher', 'Professor', 'Instructional Designer', 'Education Administrator'],
+        careerPath: this.getEducationCareerPath(),
+        alternatives: this.getEducationAlternatives(),
+      },
+      legal: {
+        relatedRoles: ['Attorney', 'Paralegal', 'Legal Consultant', 'Compliance Officer'],
+        careerPath: this.getLegalCareerPath(),
+        alternatives: this.getLegalAlternatives(),
+      },
+      finance: {
+        relatedRoles: ['Financial Analyst', 'Accountant', 'Investment Banker', 'CFO'],
+        careerPath: this.getFinanceCareerPath(),
+        alternatives: this.getFinanceAlternatives(),
+      },
+      engineering: {
+        relatedRoles: ['Mechanical Engineer', 'Civil Engineer', 'Electrical Engineer', 'Project Engineer'],
+        careerPath: this.getEngineeringCareerPath(),
+        alternatives: this.getEngineeringAlternatives(),
       },
       default: {
         relatedRoles: ['Specialist', 'Coordinator', 'Manager', 'Director'],
@@ -846,6 +1072,44 @@ Generate a roadmap that helps the user progress from their current ${
   }
 
   /**
+   * Get Data Science career path
+   */
+  private static getDataScienceCareerPath(): any {
+    return {
+      nodes: [
+        { id: '1', type: 'course', title: 'Python & Statistics Fundamentals', description: 'Learn Python programming and statistical analysis', duration: '3 months', difficulty: 'beginner', position: { x: 100, y: 100 } },
+        { id: '2', type: 'course', title: 'Machine Learning & AI', description: 'Master ML algorithms and deep learning', duration: '4 months', difficulty: 'intermediate', position: { x: 300, y: 100 } },
+        { id: '3', type: 'course', title: 'Big Data & Cloud Computing', description: 'Learn Spark, Hadoop, AWS/Azure', duration: '3 months', difficulty: 'intermediate', position: { x: 500, y: 100 } },
+        { id: '4', type: 'internship', title: 'Data Science Internship', description: 'Real-world data projects', duration: '6 months', position: { x: 700, y: 100 } },
+        { id: '5', type: 'job', title: 'Junior Data Scientist', description: 'Entry-level data science role', salary: '$70k-95k', position: { x: 900, y: 100 } },
+        { id: '6', type: 'job', title: 'Senior Data Scientist', description: 'Lead data science projects', salary: '$110k-150k', position: { x: 1100, y: 100 } },
+        { id: '7', type: 'skill', title: 'Python, SQL, R', description: 'Programming languages', position: { x: 100, y: 300 } },
+        { id: '8', type: 'skill', title: 'TensorFlow, PyTorch', description: 'ML frameworks', position: { x: 300, y: 300 } },
+        { id: '9', type: 'certification', title: 'Google Data Analytics Certificate', description: 'Industry certification', position: { x: 500, y: 300 } },
+      ],
+      edges: [
+        { id: 'e1-2', source: '1', target: '2', type: 'smoothstep', animated: true },
+        { id: 'e2-3', source: '2', target: '3', type: 'smoothstep', animated: true },
+        { id: 'e3-4', source: '3', target: '4', type: 'smoothstep', animated: true },
+        { id: 'e4-5', source: '4', target: '5', type: 'smoothstep', animated: true },
+        { id: 'e5-6', source: '5', target: '6', type: 'smoothstep', animated: true },
+      ],
+    }
+  }
+
+  /**
+   * Get Data Science alternatives
+   */
+  private static getDataScienceAlternatives(): any[] {
+    return [
+      { id: 'alt1', title: 'Machine Learning Engineer', description: 'Build and deploy ML models', matchScore: 92, salary: '$100k-150k', requirements: ['Python', 'TensorFlow', 'ML Algorithms'], growth: 'high' },
+      { id: 'alt2', title: 'Data Analyst', description: 'Analyze data and create insights', matchScore: 88, salary: '$65k-90k', requirements: ['SQL', 'Python', 'Statistics', 'Tableau'], growth: 'high' },
+      { id: 'alt3', title: 'AI Engineer', description: 'Develop AI systems and applications', matchScore: 90, salary: '$110k-160k', requirements: ['Deep Learning', 'NLP', 'Computer Vision'], growth: 'high' },
+      { id: 'alt4', title: 'Business Intelligence Analyst', description: 'Create data dashboards and reports', matchScore: 80, salary: '$70k-100k', requirements: ['SQL', 'Power BI', 'Business Analysis'], growth: 'medium' },
+    ]
+  }
+
+  /**
    * Get default business career path (Requirements 10.4)
    */
   private static getDefaultBusinessCareerPath(): any {
@@ -937,6 +1201,7 @@ Generate a roadmap that helps the user progress from their current ${
 
   /**
    * Get default generic career path (Requirements 10.4)
+   * Dynamically generates roadmap for ANY career
    */
   private static getDefaultGenericCareerPath(): any {
     return {
@@ -944,31 +1209,74 @@ Generate a roadmap that helps the user progress from their current ${
         {
           id: '1',
           type: 'course',
-          title: 'Professional Skills',
-          description: 'Develop core professional skills',
-          duration: '2 months',
+          title: 'Foundation Skills',
+          description: 'Build core competencies in your field',
+          duration: '3-6 months',
           difficulty: 'beginner',
           position: { x: 100, y: 100 },
         },
         {
           id: '2',
+          type: 'course',
+          title: 'Advanced Training',
+          description: 'Develop specialized expertise',
+          duration: '4-8 months',
+          difficulty: 'intermediate',
+          position: { x: 300, y: 100 },
+        },
+        {
+          id: '3',
+          type: 'internship',
+          title: 'Professional Experience',
+          description: 'Gain hands-on industry experience',
+          duration: '6-12 months',
+          position: { x: 500, y: 100 },
+        },
+        {
+          id: '4',
           type: 'job',
           title: 'Entry Level Position',
-          description: 'Start your career journey',
+          description: 'Begin your professional career',
           salary: '$40k-60k',
-          position: { x: 300, y: 100 },
+          position: { x: 700, y: 100 },
+        },
+        {
+          id: '5',
+          type: 'job',
+          title: 'Mid-Level Professional',
+          description: 'Advance in your career with experience',
+          salary: '$60k-90k',
+          position: { x: 900, y: 100 },
+        },
+        {
+          id: '6',
+          type: 'skill',
+          title: 'Core Skills',
+          description: 'Essential competencies for your field',
+          position: { x: 100, y: 300 },
+        },
+        {
+          id: '7',
+          type: 'certification',
+          title: 'Professional Certification',
+          description: 'Industry-recognized credentials',
+          position: { x: 300, y: 300 },
+        },
+        {
+          id: '8',
+          type: 'skill',
+          title: 'Leadership Skills',
+          description: 'Team management and communication',
+          position: { x: 500, y: 300 },
         },
       ],
       edges: [
-        {
-          id: 'e1-2',
-          source: '1',
-          target: '2',
-          sourceHandle: 'bottom',
-          targetHandle: 'top',
-          type: 'smoothstep',
-          animated: true,
-        },
+        { id: 'e1-2', source: '1', target: '2', type: 'smoothstep', animated: true },
+        { id: 'e2-3', source: '2', target: '3', type: 'smoothstep', animated: true },
+        { id: 'e3-4', source: '3', target: '4', type: 'smoothstep', animated: true },
+        { id: 'e4-5', source: '4', target: '5', type: 'smoothstep', animated: true },
+        { id: 'e1-6', source: '1', target: '6', type: 'smoothstep' },
+        { id: 'e2-7', source: '2', target: '7', type: 'smoothstep' },
       ],
     }
   }
@@ -980,31 +1288,343 @@ Generate a roadmap that helps the user progress from their current ${
     return [
       {
         id: 'alt1',
-        title: 'Administrative Specialist',
-        description: 'Support organizational operations',
-        matchScore: 70,
-        salary: '$35k-55k',
-        requirements: ['Organization', 'Communication', 'Computer Skills'],
-        growth: 'low',
+        title: 'Project Coordinator',
+        description: 'Manage projects and coordinate team activities',
+        matchScore: 75,
+        salary: '$45k-70k',
+        requirements: ['Project Management', 'Communication', 'Organization'],
+        growth: 'medium',
       },
       {
         id: 'alt2',
-        title: 'Customer Service Representative',
-        description: 'Assist customers with inquiries',
-        matchScore: 75,
-        salary: '$30k-50k',
-        requirements: ['Communication', 'Problem Solving', 'Patience'],
-        growth: 'low',
+        title: 'Operations Specialist',
+        description: 'Optimize processes and improve efficiency',
+        matchScore: 72,
+        salary: '$50k-75k',
+        requirements: ['Operations', 'Analysis', 'Process Improvement'],
+        growth: 'medium',
       },
       {
         id: 'alt3',
-        title: 'Sales Associate',
-        description: 'Sell products or services',
-        matchScore: 65,
-        salary: '$35k-65k',
-        requirements: ['Sales', 'Communication', 'Persuasion'],
-        growth: 'medium',
+        title: 'Consultant',
+        description: 'Provide expert advice in your field',
+        matchScore: 70,
+        salary: '$60k-100k',
+        requirements: ['Expertise', 'Communication', 'Problem Solving'],
+        growth: 'high',
       },
+    ]
+  }
+
+  /**
+   * Get Startup Founder career path
+   */
+  private static getStartupFounderCareerPath(): any {
+    return {
+      nodes: [
+        { id: '1', type: 'course', title: 'Entrepreneurship Fundamentals', description: 'Y Combinator Startup School', duration: '4 weeks', difficulty: 'beginner', position: { x: 100, y: 100 } },
+        { id: '2', type: 'course', title: 'Product Development & MVP', description: 'Build and validate your product', duration: '3 months', difficulty: 'intermediate', position: { x: 300, y: 100 } },
+        { id: '3', type: 'internship', title: 'Startup Accelerator', description: 'Join accelerator program', duration: '3-6 months', position: { x: 500, y: 100 } },
+        { id: '4', type: 'job', title: 'Founder & CEO', description: 'Launch your startup', salary: 'Equity-based', position: { x: 700, y: 100 } },
+        { id: '5', type: 'skill', title: 'Business Strategy', description: 'Develop business model', position: { x: 100, y: 300 } },
+        { id: '6', type: 'certification', title: 'MBA or Business Degree', description: 'Formal business education', position: { x: 300, y: 300 } },
+      ],
+      edges: [
+        { id: 'e1-2', source: '1', target: '2', type: 'smoothstep', animated: true },
+        { id: 'e2-3', source: '2', target: '3', type: 'smoothstep', animated: true },
+        { id: 'e3-4', source: '3', target: '4', type: 'smoothstep', animated: true },
+      ],
+    }
+  }
+
+  private static getStartupFounderAlternatives(): any[] {
+    return [
+      { id: 'alt1', title: 'Product Manager', description: 'Lead product development', matchScore: 85, salary: '$90k-150k', requirements: ['Product Strategy', 'Leadership'], growth: 'high' },
+      { id: 'alt2', title: 'Business Development Manager', description: 'Drive growth', matchScore: 80, salary: '$75k-130k', requirements: ['Sales', 'Strategy'], growth: 'high' },
+      { id: 'alt3', title: 'Venture Capitalist', description: 'Invest in startups', matchScore: 75, salary: '$100k-200k', requirements: ['Finance', 'Business'], growth: 'medium' },
+    ]
+  }
+
+  /**
+   * Get Motion Graphics career path
+   */
+  private static getMotionGraphicsCareerPath(): any {
+    return {
+      nodes: [
+        { id: '1', type: 'course', title: 'After Effects Fundamentals', description: 'Master motion graphics essentials', duration: '3 months', difficulty: 'beginner', position: { x: 100, y: 100 } },
+        { id: '2', type: 'course', title: 'Cinema 4D & 3D Animation', description: 'Learn 3D motion design', duration: '4 months', difficulty: 'intermediate', position: { x: 300, y: 100 } },
+        { id: '3', type: 'internship', title: 'Motion Design Intern', description: 'Work with creative agency', duration: '6 months', position: { x: 500, y: 100 } },
+        { id: '4', type: 'job', title: 'Junior Motion Graphics Artist', description: 'Create animations and visual effects', salary: '$45k-65k', position: { x: 700, y: 100 } },
+        { id: '5', type: 'job', title: 'Senior Motion Designer', description: 'Lead creative projects', salary: '$70k-100k', position: { x: 900, y: 100 } },
+        { id: '6', type: 'skill', title: 'Visual Design', description: 'Composition and aesthetics', position: { x: 100, y: 300 } },
+        { id: '7', type: 'certification', title: 'Adobe Certified Professional', description: 'Industry certification', position: { x: 300, y: 300 } },
+      ],
+      edges: [
+        { id: 'e1-2', source: '1', target: '2', type: 'smoothstep', animated: true },
+        { id: 'e2-3', source: '2', target: '3', type: 'smoothstep', animated: true },
+        { id: 'e3-4', source: '3', target: '4', type: 'smoothstep', animated: true },
+        { id: 'e4-5', source: '4', target: '5', type: 'smoothstep', animated: true },
+      ],
+    }
+  }
+
+  /**
+   * Get Cybersecurity career path
+   */
+  private static getCybersecurityCareerPath(): any {
+    return {
+      nodes: [
+        { id: '1', type: 'course', title: 'Networking & Linux Fundamentals', description: 'Learn networking basics and Linux command line', duration: '3 months', difficulty: 'beginner', position: { x: 100, y: 100 } },
+        { id: '2', type: 'course', title: 'Ethical Hacking & Pentesting', description: 'Master penetration testing techniques', duration: '4 months', difficulty: 'intermediate', position: { x: 300, y: 100 } },
+        { id: '3', type: 'certification', title: 'CEH or OSCP Certification', description: 'Industry-recognized security certifications', position: { x: 500, y: 100 } },
+        { id: '4', type: 'internship', title: 'Security Analyst Intern', description: 'Gain hands-on security experience', duration: '6 months', position: { x: 700, y: 100 } },
+        { id: '5', type: 'job', title: 'Junior Penetration Tester', description: 'Entry-level pentesting role', salary: '$60k-80k', position: { x: 900, y: 100 } },
+        { id: '6', type: 'job', title: 'Senior Security Engineer', description: 'Lead security assessments', salary: '$100k-140k', position: { x: 1100, y: 100 } },
+        { id: '7', type: 'skill', title: 'Kali Linux & Tools', description: 'Nmap, Metasploit, Burp Suite', position: { x: 100, y: 300 } },
+        { id: '8', type: 'skill', title: 'Web Security', description: 'OWASP Top 10, SQL Injection', position: { x: 300, y: 300 } },
+      ],
+      edges: [
+        { id: 'e1-2', source: '1', target: '2', type: 'smoothstep', animated: true },
+        { id: 'e2-3', source: '2', target: '3', type: 'smoothstep', animated: true },
+        { id: 'e3-4', source: '3', target: '4', type: 'smoothstep', animated: true },
+        { id: 'e4-5', source: '4', target: '5', type: 'smoothstep', animated: true },
+        { id: 'e5-6', source: '5', target: '6', type: 'smoothstep', animated: true },
+      ],
+    }
+  }
+
+  /**
+   * Get Cybersecurity alternatives
+   */
+  private static getCybersecurityAlternatives(): any[] {
+    return [
+      { id: 'alt1', title: 'Security Analyst', description: 'Monitor and respond to security threats', matchScore: 90, salary: '$70k-100k', requirements: ['Security Monitoring', 'Incident Response', 'SIEM'], growth: 'high', experienceLevel: 'mid' },
+      { id: 'alt2', title: 'Ethical Hacker', description: 'Identify vulnerabilities through authorized hacking', matchScore: 92, salary: '$80k-120k', requirements: ['Penetration Testing', 'Vulnerability Assessment', 'Exploits'], growth: 'high', experienceLevel: 'mid' },
+      { id: 'alt3', title: 'SOC Analyst', description: 'Work in Security Operations Center', matchScore: 85, salary: '$65k-95k', requirements: ['Threat Detection', 'Log Analysis', 'Security Tools'], growth: 'high', experienceLevel: 'entry' },
+      { id: 'alt4', title: 'Security Engineer', description: 'Design and implement security systems', matchScore: 88, salary: '$90k-130k', requirements: ['Security Architecture', 'Firewalls', 'Encryption'], growth: 'high', experienceLevel: 'senior' },
+      { id: 'alt5', title: 'Penetration Tester Intern', description: 'Gain hands-on security experience', matchScore: 80, salary: '$15-25/hour', requirements: ['Basic Security', 'Networking', 'Linux'], growth: 'high', experienceLevel: 'internship' },
+    ]
+  }
+
+  /**
+   * Get Design career path
+   */
+  private static getDesignCareerPath(): any {
+    return {
+      nodes: [
+        { id: '1', type: 'course', title: 'Graphic Design Fundamentals', description: 'Learn design principles', duration: '3 months', difficulty: 'beginner', position: { x: 100, y: 100 } },
+        { id: '2', type: 'course', title: 'UI/UX Design', description: 'User interface and experience', duration: '4 months', difficulty: 'intermediate', position: { x: 300, y: 100 } },
+        { id: '3', type: 'internship', title: 'Design Intern', description: 'Agency or in-house role', duration: '6 months', position: { x: 500, y: 100 } },
+        { id: '4', type: 'job', title: 'Junior Designer', description: 'Create visual content', salary: '$45k-65k', position: { x: 700, y: 100 } },
+        { id: '5', type: 'job', title: 'Senior Designer', description: 'Lead design projects', salary: '$70k-100k', position: { x: 900, y: 100 } },
+        { id: '6', type: 'skill', title: 'Adobe Creative Suite', description: 'Master design tools', position: { x: 100, y: 300 } },
+      ],
+      edges: [
+        { id: 'e1-2', source: '1', target: '2', type: 'smoothstep', animated: true },
+        { id: 'e2-3', source: '2', target: '3', type: 'smoothstep', animated: true },
+        { id: 'e3-4', source: '3', target: '4', type: 'smoothstep', animated: true },
+        { id: 'e4-5', source: '4', target: '5', type: 'smoothstep', animated: true },
+      ],
+    }
+  }
+
+  /**
+   * Get Creative career alternatives
+   */
+  private static getCreativeAlternatives(): any[] {
+    return [
+      { id: 'alt1', title: '3D Animator', description: 'Create 3D animations and visual effects', matchScore: 90, salary: '$55k-85k', requirements: ['3D Modeling', 'Animation', 'Cinema 4D/Blender'], growth: 'high' },
+      { id: 'alt2', title: 'Video Editor', description: 'Edit and produce video content', matchScore: 85, salary: '$50k-75k', requirements: ['Premiere Pro', 'Storytelling', 'Post-Production'], growth: 'high' },
+      { id: 'alt3', title: 'VFX Artist', description: 'Create visual effects for film and TV', matchScore: 88, salary: '$60k-95k', requirements: ['VFX Software', 'Compositing', 'Visual Effects'], growth: 'high' },
+      { id: 'alt4', title: 'Creative Director', description: 'Lead creative teams and campaigns', matchScore: 80, salary: '$80k-120k', requirements: ['Creative Leadership', 'Strategy', 'Team Management'], growth: 'medium' },
+    ]
+  }
+
+  private static getConstructionCareerPath(): any {
+    return {
+      nodes: [
+        { id: '1', type: 'course', title: 'Construction Management Basics', description: 'Learn construction fundamentals', duration: '3 months', difficulty: 'beginner', position: { x: 100, y: 100 } },
+        { id: '2', type: 'certification', title: 'OSHA Safety Certification', description: 'Construction safety training', position: { x: 300, y: 100 } },
+        { id: '3', type: 'internship', title: 'Construction Site Intern', description: 'On-site experience', duration: '6 months', position: { x: 500, y: 100 } },
+        { id: '4', type: 'job', title: 'Assistant Project Manager', description: 'Support construction projects', salary: '$45k-65k', position: { x: 700, y: 100 } },
+        { id: '5', type: 'job', title: 'Construction Manager', description: 'Lead construction projects', salary: '$70k-100k', position: { x: 900, y: 100 } },
+      ],
+      edges: [
+        { id: 'e1-2', source: '1', target: '2', type: 'smoothstep', animated: true },
+        { id: 'e2-3', source: '2', target: '3', type: 'smoothstep', animated: true },
+        { id: 'e3-4', source: '3', target: '4', type: 'smoothstep', animated: true },
+        { id: 'e4-5', source: '4', target: '5', type: 'smoothstep', animated: true },
+      ],
+    }
+  }
+
+  private static getConstructionAlternatives(): any[] {
+    return [
+      { id: 'alt1', title: 'Project Manager', description: 'Oversee construction projects', matchScore: 90, salary: '$65k-95k', requirements: ['Project Management', 'Scheduling', 'Budgeting'], growth: 'high' },
+      { id: 'alt2', title: 'Site Supervisor', description: 'Manage on-site operations', matchScore: 85, salary: '$55k-80k', requirements: ['Site Management', 'Safety', 'Coordination'], growth: 'medium' },
+      { id: 'alt3', title: 'Civil Engineer', description: 'Design construction projects', matchScore: 88, salary: '$70k-100k', requirements: ['Civil Engineering', 'AutoCAD', 'Structural Analysis'], growth: 'high' },
+      { id: 'alt4', title: 'Safety Manager', description: 'Ensure construction site safety', matchScore: 80, salary: '$60k-85k', requirements: ['Safety Management', 'OSHA', 'Risk Assessment'], growth: 'medium' },
+    ]
+  }
+
+  private static getHealthcareCareerPath(): any {
+    return {
+      nodes: [
+        { id: '1', type: 'course', title: 'Healthcare Fundamentals', description: 'Medical basics and terminology', duration: '4 months', difficulty: 'beginner', position: { x: 100, y: 100 } },
+        { id: '2', type: 'certification', title: 'Nursing or Medical Degree', description: 'Professional healthcare credential', position: { x: 300, y: 100 } },
+        { id: '3', type: 'internship', title: 'Clinical Rotation', description: 'Hospital experience', duration: '12 months', position: { x: 500, y: 100 } },
+        { id: '4', type: 'job', title: 'Registered Nurse / Medical Assistant', description: 'Entry healthcare role', salary: '$50k-70k', position: { x: 700, y: 100 } },
+        { id: '5', type: 'job', title: 'Senior Healthcare Professional', description: 'Advanced medical role', salary: '$80k-120k', position: { x: 900, y: 100 } },
+      ],
+      edges: [
+        { id: 'e1-2', source: '1', target: '2', type: 'smoothstep', animated: true },
+        { id: 'e2-3', source: '2', target: '3', type: 'smoothstep', animated: true },
+        { id: 'e3-4', source: '3', target: '4', type: 'smoothstep', animated: true },
+        { id: 'e4-5', source: '4', target: '5', type: 'smoothstep', animated: true },
+      ],
+    }
+  }
+
+  private static getHealthcareAlternatives(): any[] {
+    return [
+      { id: 'alt1', title: 'Registered Nurse', description: 'Provide direct patient care', matchScore: 92, salary: '$60k-85k', requirements: ['Nursing Degree', 'Patient Care', 'Medical Knowledge'], growth: 'high' },
+      { id: 'alt2', title: 'Medical Assistant', description: 'Support physicians and nurses', matchScore: 85, salary: '$30k-45k', requirements: ['Medical Terminology', 'Clinical Skills', 'Patient Communication'], growth: 'high' },
+      { id: 'alt3', title: 'Healthcare Administrator', description: 'Manage healthcare facilities', matchScore: 80, salary: '$70k-100k', requirements: ['Healthcare Management', 'Administration', 'Leadership'], growth: 'medium' },
+      { id: 'alt4', title: 'Physician Assistant', description: 'Diagnose and treat patients', matchScore: 88, salary: '$90k-120k', requirements: ['Medical Degree', 'Diagnostics', 'Patient Care'], growth: 'high' },
+    ]
+  }
+
+  private static getEducationCareerPath(): any {
+    return {
+      nodes: [
+        { id: '1', type: 'course', title: 'Education Degree', description: "Bachelor's in Education", duration: '4 years', difficulty: 'intermediate', position: { x: 100, y: 100 } },
+        { id: '2', type: 'certification', title: 'Teaching License', description: 'State teaching credential', position: { x: 300, y: 100 } },
+        { id: '3', type: 'internship', title: 'Student Teaching', description: 'Classroom experience', duration: '6 months', position: { x: 500, y: 100 } },
+        { id: '4', type: 'job', title: 'Classroom Teacher', description: 'Teach students', salary: '$40k-60k', position: { x: 700, y: 100 } },
+        { id: '5', type: 'job', title: 'Department Head / Professor', description: 'Lead education programs', salary: '$65k-95k', position: { x: 900, y: 100 } },
+      ],
+      edges: [
+        { id: 'e1-2', source: '1', target: '2', type: 'smoothstep', animated: true },
+        { id: 'e2-3', source: '2', target: '3', type: 'smoothstep', animated: true },
+        { id: 'e3-4', source: '3', target: '4', type: 'smoothstep', animated: true },
+        { id: 'e4-5', source: '4', target: '5', type: 'smoothstep', animated: true },
+      ],
+    }
+  }
+
+  private static getEducationAlternatives(): any[] {
+    return [
+      { id: 'alt1', title: 'Teacher', description: 'Educate students in classrooms', matchScore: 95, salary: '$45k-70k', requirements: ['Teaching License', 'Curriculum Design', 'Classroom Management'], growth: 'medium' },
+      { id: 'alt2', title: 'Professor', description: 'Teach at university level', matchScore: 88, salary: '$60k-100k', requirements: ['Advanced Degree', 'Research', 'Teaching'], growth: 'medium' },
+      { id: 'alt3', title: 'Instructional Designer', description: 'Design learning experiences', matchScore: 85, salary: '$55k-85k', requirements: ['Instructional Design', 'E-Learning', 'Curriculum'], growth: 'high' },
+      { id: 'alt4', title: 'Education Administrator', description: 'Manage schools and programs', matchScore: 80, salary: '$70k-110k', requirements: ['Leadership', 'Administration', 'Education Policy'], growth: 'medium' },
+    ]
+  }
+
+  private static getLegalCareerPath(): any {
+    return {
+      nodes: [
+        { id: '1', type: 'course', title: 'Law Degree (JD)', description: 'Juris Doctor degree', duration: '3 years', difficulty: 'advanced', position: { x: 100, y: 100 } },
+        { id: '2', type: 'certification', title: 'Bar Exam', description: 'State bar certification', position: { x: 300, y: 100 } },
+        { id: '3', type: 'internship', title: 'Legal Internship', description: 'Law firm experience', duration: '1 year', position: { x: 500, y: 100 } },
+        { id: '4', type: 'job', title: 'Associate Attorney', description: 'Entry-level lawyer', salary: '$60k-100k', position: { x: 700, y: 100 } },
+        { id: '5', type: 'job', title: 'Partner / Senior Attorney', description: 'Lead legal practice', salary: '$120k-200k', position: { x: 900, y: 100 } },
+      ],
+      edges: [
+        { id: 'e1-2', source: '1', target: '2', type: 'smoothstep', animated: true },
+        { id: 'e2-3', source: '2', target: '3', type: 'smoothstep', animated: true },
+        { id: 'e3-4', source: '3', target: '4', type: 'smoothstep', animated: true },
+        { id: 'e4-5', source: '4', target: '5', type: 'smoothstep', animated: true },
+      ],
+    }
+  }
+
+  private static getLegalAlternatives(): any[] {
+    return [
+      { id: 'alt1', title: 'Attorney', description: 'Represent clients in legal matters', matchScore: 95, salary: '$80k-150k', requirements: ['Law Degree', 'Bar License', 'Legal Research'], growth: 'medium' },
+      { id: 'alt2', title: 'Paralegal', description: 'Assist lawyers with legal work', matchScore: 85, salary: '$45k-65k', requirements: ['Legal Knowledge', 'Research', 'Documentation'], growth: 'medium' },
+      { id: 'alt3', title: 'Legal Consultant', description: 'Advise on legal matters', matchScore: 88, salary: '$70k-120k', requirements: ['Legal Expertise', 'Consulting', 'Business Law'], growth: 'high' },
+      { id: 'alt4', title: 'Compliance Officer', description: 'Ensure regulatory compliance', matchScore: 80, salary: '$60k-95k', requirements: ['Compliance', 'Regulations', 'Risk Management'], growth: 'high' },
+    ]
+  }
+
+  private static getFinanceCareerPath(): any {
+    return {
+      nodes: [
+        { id: '1', type: 'course', title: 'Finance or Accounting Degree', description: "Bachelor's in Finance", duration: '4 years', difficulty: 'intermediate', position: { x: 100, y: 100 } },
+        { id: '2', type: 'certification', title: 'CPA or CFA', description: 'Professional certification', position: { x: 300, y: 100 } },
+        { id: '3', type: 'internship', title: 'Finance Internship', description: 'Financial institution experience', duration: '6 months', position: { x: 500, y: 100 } },
+        { id: '4', type: 'job', title: 'Financial Analyst', description: 'Analyze financial data', salary: '$55k-80k', position: { x: 700, y: 100 } },
+        { id: '5', type: 'job', title: 'Senior Financial Manager', description: 'Lead finance teams', salary: '$90k-140k', position: { x: 900, y: 100 } },
+      ],
+      edges: [
+        { id: 'e1-2', source: '1', target: '2', type: 'smoothstep', animated: true },
+        { id: 'e2-3', source: '2', target: '3', type: 'smoothstep', animated: true },
+        { id: 'e3-4', source: '3', target: '4', type: 'smoothstep', animated: true },
+        { id: 'e4-5', source: '4', target: '5', type: 'smoothstep', animated: true },
+      ],
+    }
+  }
+
+  private static getFinanceAlternatives(): any[] {
+    return [
+      { id: 'alt1', title: 'Financial Analyst', description: 'Analyze investments and financial data', matchScore: 92, salary: '$60k-90k', requirements: ['Financial Analysis', 'Excel', 'Modeling'], growth: 'high' },
+      { id: 'alt2', title: 'Accountant', description: 'Manage financial records and taxes', matchScore: 90, salary: '$50k-75k', requirements: ['Accounting', 'CPA', 'Tax Knowledge'], growth: 'medium' },
+      { id: 'alt3', title: 'Investment Banker', description: 'Facilitate financial transactions', matchScore: 85, salary: '$100k-200k', requirements: ['Finance', 'M&A', 'Client Relations'], growth: 'high' },
+      { id: 'alt4', title: 'CFO', description: 'Lead company financial strategy', matchScore: 80, salary: '$130k-250k', requirements: ['Strategic Finance', 'Leadership', 'Business Acumen'], growth: 'medium' },
+    ]
+  }
+
+  private static getEngineeringCareerPath(): any {
+    return {
+      nodes: [
+        { id: '1', type: 'course', title: 'Engineering Degree', description: "Bachelor's in Engineering", duration: '4 years', difficulty: 'advanced', position: { x: 100, y: 100 } },
+        { id: '2', type: 'certification', title: 'PE License', description: 'Professional Engineer license', position: { x: 300, y: 100 } },
+        { id: '3', type: 'internship', title: 'Engineering Internship', description: 'Hands-on engineering work', duration: '6 months', position: { x: 500, y: 100 } },
+        { id: '4', type: 'job', title: 'Junior Engineer', description: 'Entry-level engineering role', salary: '$60k-80k', position: { x: 700, y: 100 } },
+        { id: '5', type: 'job', title: 'Senior Engineer / Project Lead', description: 'Lead engineering projects', salary: '$90k-130k', position: { x: 900, y: 100 } },
+      ],
+      edges: [
+        { id: 'e1-2', source: '1', target: '2', type: 'smoothstep', animated: true },
+        { id: 'e2-3', source: '2', target: '3', type: 'smoothstep', animated: true },
+        { id: 'e3-4', source: '3', target: '4', type: 'smoothstep', animated: true },
+        { id: 'e4-5', source: '4', target: '5', type: 'smoothstep', animated: true },
+      ],
+    }
+  }
+
+  private static getEngineeringAlternatives(): any[] {
+    return [
+      { id: 'alt1', title: 'Mechanical Engineer', description: 'Design mechanical systems', matchScore: 92, salary: '$70k-100k', requirements: ['Mechanical Engineering', 'CAD', 'Design'], growth: 'high' },
+      { id: 'alt2', title: 'Civil Engineer', description: 'Design infrastructure projects', matchScore: 90, salary: '$65k-95k', requirements: ['Civil Engineering', 'AutoCAD', 'Structural Analysis'], growth: 'medium' },
+      { id: 'alt3', title: 'Electrical Engineer', description: 'Work with electrical systems', matchScore: 88, salary: '$75k-110k', requirements: ['Electrical Engineering', 'Circuit Design', 'Power Systems'], growth: 'high' },
+      { id: 'alt4', title: 'Project Engineer', description: 'Manage engineering projects', matchScore: 85, salary: '$80k-120k', requirements: ['Project Management', 'Engineering', 'Leadership'], growth: 'high' },
+    ]
+  }
+
+  private static getClimateScientistCareerPath(): any {
+    return {
+      nodes: [
+        { id: '1', type: 'course', title: 'Environmental Science Degree', description: 'Bachelor\'s in Environmental Science', duration: '4 years', difficulty: 'intermediate', position: { x: 100, y: 100 } },
+        { id: '2', type: 'course', title: 'Climate Modeling', description: 'Master climate research methods', duration: '2 years', difficulty: 'advanced', position: { x: 300, y: 100 } },
+        { id: '3', type: 'internship', title: 'Research Assistant', description: 'Work in climate research lab', duration: '6-12 months', position: { x: 500, y: 100 } },
+        { id: '4', type: 'job', title: 'Climate Scientist', description: 'Research climate patterns', salary: '$60k-100k', position: { x: 700, y: 100 } },
+        { id: '5', type: 'certification', title: 'PhD in Climate Science', description: 'Advanced research degree', position: { x: 100, y: 300 } },
+        { id: '6', type: 'skill', title: 'Data Science', description: 'Analyze climate data', position: { x: 300, y: 300 } },
+      ],
+      edges: [
+        { id: 'e1-2', source: '1', target: '2', type: 'smoothstep', animated: true },
+        { id: 'e2-3', source: '2', target: '3', type: 'smoothstep', animated: true },
+        { id: 'e3-4', source: '3', target: '4', type: 'smoothstep', animated: true },
+      ],
+    }
+  }
+
+  private static getClimateScientistAlternatives(): any[] {
+    return [
+      { id: 'alt1', title: 'Environmental Consultant', description: 'Advise on sustainability', matchScore: 85, salary: '$55k-95k', requirements: ['Environmental Science', 'Policy'], growth: 'high' },
+      { id: 'alt2', title: 'Sustainability Manager', description: 'Lead sustainability initiatives', matchScore: 80, salary: '$70k-120k', requirements: ['Sustainability', 'Management'], growth: 'high' },
+      { id: 'alt3', title: 'Environmental Policy Analyst', description: 'Shape environmental policy', matchScore: 75, salary: '$60k-90k', requirements: ['Policy', 'Research'], growth: 'medium' },
     ]
   }
 
@@ -1107,7 +1727,7 @@ Generate a roadmap that helps the user progress from their current ${
         /[^a-zA-Z0-9]/g,
         ''
       )
-      const cachedResult = this.getCachedResponse<string>(cacheKey)
+      const cachedResult = await this.getCachedResponse<string>(cacheKey)
       if (cachedResult) {
         return cachedResult
       }
@@ -1162,7 +1782,9 @@ Generate a roadmap that helps the user progress from their current ${
       }
 
       const cacheKey = `alternatives_${this.generateCacheKey(request)}`
-      const cachedResult = this.getCachedResponse<AlternativeCareer[]>(cacheKey)
+      const cachedResult = await this.getCachedResponse<AlternativeCareer[]>(
+        cacheKey
+      )
       if (cachedResult) {
         return cachedResult
       }
@@ -1291,10 +1913,41 @@ Make sure each alternative is realistic for someone with ${
   }
 
   /**
+   * Generate content using Gemini AI
+   */
+  static async generateContent(prompt: string): Promise<string> {
+    if (!this.isConfigured()) {
+      throw new Error(
+        'Gemini AI service is not configured. Please check your API key.'
+      )
+    }
+
+    try {
+      if (!genAI || !model) {
+        throw new Error('Gemini AI not properly initialized')
+      }
+
+      const result = await model.generateContent(prompt)
+      const response = await result.response
+      return response.text()
+    } catch (error) {
+      console.error('Error generating content with Gemini:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Check if Gemini AI is properly configured
+   */
+  static isConfigured(): boolean {
+    return !!(geminiConfig.apiKey && genAI && model)
+  }
+
+  /**
    * Clear cache manually (Requirements 10.2, 10.3)
    */
   static clearCache(): void {
-    this.cache.clear()
+    cacheService.clear()
     console.log('🧹 Gemini AI cache cleared')
   }
 
@@ -1303,8 +1956,8 @@ Make sure each alternative is realistic for someone with ${
    */
   static getCacheStats(): { size: number; entries: string[] } {
     return {
-      size: this.cache.size,
-      entries: Array.from(this.cache.keys()),
+      size: 0, // Cache service doesn't expose size
+      entries: [], // Cache service doesn't expose keys
     }
   }
 
@@ -1336,7 +1989,7 @@ Make sure each alternative is realistic for someone with ${
           apiKey: !!geminiConfig.apiKey,
           model: geminiConfig.model,
           cacheEnabled: geminiConfig.cacheEnabled,
-          cacheSize: this.cache.size,
+          cacheSize: 0, // Cache service doesn't expose size
           testResponse: text.substring(0, 50),
         },
       }

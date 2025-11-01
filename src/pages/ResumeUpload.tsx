@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../lib/stores/userStore';
 import { FileUploader } from '../components/resume/FileUploader';
 import { NBButton } from '../components/NBButton';
 import { NBCard } from '../components/NBCard';
-import { ArrowLeft, Upload, Loader2 } from 'lucide-react';
+import { ArrowLeft, Upload, Loader2, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { EnhancedResumeVersion } from '../lib/types';
+import { GeminiService } from '../lib/services/geminiService';
+import { DepartmentService } from '../lib/services/departmentService';
 
 export const ResumeUpload: React.FC = () => {
   const navigate = useNavigate();
@@ -15,6 +17,105 @@ export const ResumeUpload: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [statusText, setStatusText] = useState('');
+  const [useDefaultJobDescription, setUseDefaultJobDescription] = useState(false);
+  const [selectedJobRole, setSelectedJobRole] = useState('');
+  const [availableJobs, setAvailableJobs] = useState<any[]>([]);
+
+  // Check authentication on component mount
+  useEffect(() => {
+    if (!enhancedProfile) {
+      toast.info('Please complete your career assessment first');
+      navigate('/assessment');
+      return;
+    }
+
+    // Load available job roles
+    const allJobs = DepartmentService.searchJobs('');
+    setAvailableJobs(allJobs);
+
+    // Auto-fill job title from user's career recommendation
+    const userCareerRole = enhancedProfile.careerRecommendations?.[0]?.title;
+    if (userCareerRole) {
+      setSelectedJobRole(userCareerRole);
+    }
+  }, [enhancedProfile, navigate]);
+
+  const generateJobDescription = async (jobTitle: string): Promise<string> => {
+    try {
+      const prompt = `Generate a comprehensive, industry-standard job description for a ${jobTitle} position. 
+
+Include:
+1. Job Summary (2-3 sentences)
+2. Key Responsibilities (5-7 bullet points)
+3. Required Skills and Qualifications (technical and soft skills)
+4. Preferred Qualifications
+5. Experience Level requirements
+
+Make it realistic and based on current industry standards. Format it as a professional job posting.`;
+
+      const response = await GeminiService.generateContent(prompt);
+      return response;
+    } catch (error) {
+      console.error('Error generating job description:', error);
+      return `Job Description for ${jobTitle}
+
+We are seeking a talented ${jobTitle} to join our dynamic team. The ideal candidate will have strong technical skills and experience in relevant technologies.
+
+Key Responsibilities:
+• Develop and maintain high-quality software solutions
+• Collaborate with cross-functional teams
+• Participate in code reviews and technical discussions
+• Contribute to system architecture and design decisions
+• Stay updated with industry best practices
+
+Required Skills:
+• Strong programming skills
+• Problem-solving abilities
+• Team collaboration
+• Communication skills
+• Attention to detail
+
+Experience: 2+ years of relevant experience preferred.`;
+    }
+  };
+
+  const handleJobRoleChange = async (jobTitle: string) => {
+    setSelectedJobRole(jobTitle);
+    
+    if (useDefaultJobDescription && jobTitle) {
+      setStatusText('Generating job description...');
+      try {
+        const generatedDescription = await generateJobDescription(jobTitle);
+        const jobDescriptionTextarea = document.getElementById('jobDescription') as HTMLTextAreaElement;
+        if (jobDescriptionTextarea) {
+          jobDescriptionTextarea.value = generatedDescription;
+        }
+      } catch (error) {
+        toast.error('Failed to generate job description');
+      } finally {
+        setStatusText('');
+      }
+    }
+  };
+
+  const handleUseDefaultToggle = async (checked: boolean) => {
+    setUseDefaultJobDescription(checked);
+    
+    if (checked && selectedJobRole) {
+      setStatusText('Generating job description...');
+      try {
+        const generatedDescription = await generateJobDescription(selectedJobRole);
+        const jobDescriptionTextarea = document.getElementById('jobDescription') as HTMLTextAreaElement;
+        if (jobDescriptionTextarea) {
+          jobDescriptionTextarea.value = generatedDescription;
+        }
+      } catch (error) {
+        toast.error('Failed to generate job description');
+      } finally {
+        setStatusText('');
+      }
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -27,10 +128,25 @@ export const ResumeUpload: React.FC = () => {
     const formData = new FormData(e.currentTarget);
     const companyName = formData.get('companyName') as string;
     const jobTitle = formData.get('jobTitle') as string;
-    const jobDescription = formData.get('jobDescription') as string;
+    let jobDescription = formData.get('jobDescription') as string;
 
-    if (!companyName || !jobTitle || !jobDescription) {
-      toast.error('Please fill in all fields');
+    if (!companyName || !jobTitle) {
+      toast.error('Please fill in company name and job title');
+      return;
+    }
+
+    // Generate job description if using default and not provided
+    if (useDefaultJobDescription && !jobDescription) {
+      try {
+        jobDescription = await generateJobDescription(jobTitle);
+      } catch (error) {
+        toast.error('Failed to generate job description');
+        return;
+      }
+    }
+
+    if (!jobDescription) {
+      toast.error('Please provide a job description or use the default option');
       return;
     }
 
@@ -223,30 +339,72 @@ export const ResumeUpload: React.FC = () => {
                 <div>
                   <label htmlFor="jobTitle" className="block text-sm font-medium text-foreground mb-2">
                     Job Title
+                    {enhancedProfile?.careerRecommendations?.[0]?.title && (
+                      <span className="text-sm text-gray-500 ml-2">
+                        (Auto-filled from your assessment)
+                      </span>
+                    )}
                   </label>
+                  <div className="relative">
+                    <select
+                      id="jobTitle"
+                      name="jobTitle"
+                      value={selectedJobRole}
+                      onChange={(e) => handleJobRoleChange(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent appearance-none bg-white"
+                      required
+                    >
+                      <option value="">Select a job role</option>
+                      {availableJobs.map((job) => (
+                        <option key={job.id} value={job.title}>
+                          {job.title}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  </div>
                   <input
                     type="text"
-                    id="jobTitle"
-                    name="jobTitle"
-                    placeholder="e.g., Software Engineer, Data Scientist"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                    required
+                    placeholder="Or type a custom job title"
+                    value={selectedJobRole}
+                    onChange={(e) => setSelectedJobRole(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent mt-2"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="jobDescription" className="block text-sm font-medium text-foreground mb-2">
-                  Job Description
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label htmlFor="jobDescription" className="block text-sm font-medium text-foreground">
+                    Job Description
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="useDefault"
+                      checked={useDefaultJobDescription}
+                      onChange={(e) => handleUseDefaultToggle(e.target.checked)}
+                      className="rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="useDefault" className="text-sm text-gray-600">
+                      Use AI-generated default
+                    </label>
+                  </div>
+                </div>
                 <textarea
                   id="jobDescription"
                   name="jobDescription"
-                  rows={6}
-                  placeholder="Paste the job description here to get more targeted feedback..."
+                  rows={8}
+                  placeholder={useDefaultJobDescription 
+                    ? "AI will generate a job description based on the selected role..." 
+                    : "Paste the specific job description here for more targeted feedback..."
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
-                  required
+                  disabled={useDefaultJobDescription}
                 />
+                {statusText && (
+                  <p className="text-sm text-blue-600 mt-1">{statusText}</p>
+                )}
               </div>
 
               {/* File Upload */}

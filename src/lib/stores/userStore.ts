@@ -163,7 +163,9 @@ export const useUserStore = create<UserStore>((set, get) => ({
         const syncToDatabase = async () => {
           try {
             const { EnhancedProfileService } = await import('../services/enhancedProfileService');
-            await EnhancedProfileService.updateEnhancedProfile(profile);
+            // Use saveEnhancedProfile instead of updateEnhancedProfile
+            // This ensures the profile is created if it doesn't exist (POST instead of PATCH)
+            await EnhancedProfileService.saveEnhancedProfile(profile);
             console.log('Enhanced profile auto-synced to database');
           } catch (error) {
             console.warn('Failed to auto-sync enhanced profile to database:', error);

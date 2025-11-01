@@ -25,21 +25,7 @@ export class EnhancedProfileService {
     try {
       console.log('Loading enhanced profile from database...');
       
-      // Development mode: Return mock profile for demo users
-      const isDevelopment = import.meta.env.MODE === 'development';
-      const currentUser = localStorage.getItem('user');
-      
-      if (isDevelopment && currentUser) {
-        try {
-          const user = JSON.parse(currentUser);
-          if (user.username === 'demo' || user.username === 'test') {
-            console.log('Returning mock enhanced profile for demo user');
-            return this.getMockEnhancedProfile(user.username);
-          }
-        } catch (e) {
-          // Continue with normal flow if parsing fails
-        }
-      }
+
       
       const response = await axios.get('/user/enhanced-profile');
       console.log('Enhanced profile loaded successfully:', response.data);
@@ -62,7 +48,7 @@ export class EnhancedProfileService {
     
     return {
       // Basic profile
-      name: username === 'demo' ? 'Demo User' : 'Test User',
+      name: 'User',
       age: 25,
       educationLevel: 'bachelors' as const,
       skills: ['JavaScript', 'React', 'Node.js', 'Python', 'TypeScript'],

@@ -40,21 +40,22 @@ export const ProtectedRoute = ({
   const isEnhancedProfileComplete = (profile: any) => {
     if (!profile) return false
 
-    // Check for essential fields that indicate a completed assessment
-    const hasEssentialFields = !!(
-      profile.achievements !== undefined &&
-      profile.badges !== undefined &&
-      profile.level !== undefined &&
-      profile.careerRecommendations !== undefined &&
-      profile.progressData !== undefined
+    // NEW: Less strict check - only look for actual career data, not gamification fields
+    // A complete profile has EITHER:
+    // 1. Career recommendations (generated roadmap)
+    // 2. Career interest (at minimum)
+    const hasCareerRecommendations = !!(
+      profile.careerRecommendations && 
+      profile.careerRecommendations.length > 0
     )
-
-    // Also check if they have at least one career recommendation (indicates completed assessment)
-    const hasCareerData = !!(
-      profile.careerRecommendations && profile.careerRecommendations.length > 0
+    
+    const hasCareerInterest = !!(
+      profile.careerInterest && 
+      profile.careerInterest.trim().length > 0
     )
-
-    return hasEssentialFields && hasCareerData
+    
+    // Profile is complete if it has recommendations OR at least a career interest
+    return hasCareerRecommendations || hasCareerInterest
   }
 
   // Check enhanced profile status from multiple sources

@@ -1,5 +1,6 @@
 import React from 'react';
 import { MapPin, Clock, Target, TrendingUp, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { NBCard } from '@/components/NBCard';
 import { NBButton } from '@/components/NBButton';
 import { CareerRecommendation } from '@/lib/types';
@@ -19,6 +20,11 @@ export const CareerRoadmapDisplay: React.FC<CareerRoadmapDisplayProps> = ({
   onViewFullRoadmap,
   onUpdateRoadmap
 }) => {
+  const navigate = useNavigate();
+
+  const handleMilestoneClick = () => {
+    navigate('/learning-resources');
+  };
   if (!roadmap) {
     return (
       <NBCard className="p-6 bg-gradient-to-r from-yellow-50/90 to-orange-50/90 border-yellow-200">
@@ -95,7 +101,18 @@ export const CareerRoadmapDisplay: React.FC<CareerRoadmapDisplayProps> = ({
 
         {/* Next Milestone */}
         {nextMilestone && (
-          <div className="bg-white/80 rounded-lg p-4 border border-blue-200">
+          <div 
+            className="bg-white/80 rounded-lg p-4 border border-blue-200 cursor-pointer hover:bg-white/90 hover:border-blue-300 hover:shadow-md transition-all duration-200"
+            onClick={handleMilestoneClick}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleMilestoneClick();
+              }
+            }}
+          >
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
@@ -123,29 +140,12 @@ export const CareerRoadmapDisplay: React.FC<CareerRoadmapDisplayProps> = ({
                   )}
                 </div>
               </div>
-              <ChevronRight className="h-5 w-5 text-blue-400 mt-1" />
+              <ChevronRight className="h-5 w-5 text-blue-400 mt-1 group-hover:text-blue-600 transition-colors duration-200" />
             </div>
           </div>
         )}
 
-        {/* Quick Actions */}
-        <div className="flex flex-wrap gap-2">
-          <NBButton
-            variant="ghost"
-            onClick={onViewFullRoadmap}
-            className="text-blue-600 hover:bg-blue-100 text-sm"
-          >
-            View Timeline
-          </NBButton>
-          {roadmap.recommendedPath && (
-            <NBButton
-              variant="ghost"
-              className="text-blue-600 hover:bg-blue-100 text-sm"
-            >
-              Learning Resources
-            </NBButton>
-          )}
-        </div>
+
       </div>
     </NBCard>
   );

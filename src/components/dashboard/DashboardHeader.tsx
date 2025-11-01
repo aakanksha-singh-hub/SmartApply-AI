@@ -63,14 +63,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             <Settings className="h-4 w-4 mr-2" />
             Settings
           </NBButton>
-          <NBButton
-            variant="secondary"
-            onClick={onLogout}
-            className="text-red-600 hover:text-red-700"
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
-          </NBButton>
         </div>
       </div>
     </NBCard>

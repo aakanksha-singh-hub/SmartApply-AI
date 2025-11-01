@@ -87,8 +87,8 @@ export const MainNavbar: React.FC = () => {
 
   const handleProfileClick = () => {
     if (isLoggedIn) {
-      // Logged in users go to dashboard
-      navigate('/dashboard');
+      // Logged in users go to their profile page
+      navigate('/profile');
     } else {
       // Non-logged in users go to sign in
       navigate('/signin');
@@ -190,8 +190,8 @@ export const MainNavbar: React.FC = () => {
                 <button
                   onClick={handleProfileClick}
                   className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center btn-hover-lift focus-ring"
-                  title="Go to Dashboard"
-                  aria-label="Go to Dashboard"
+                  title="Go to Profile"
+                  aria-label="Go to Profile"
                 >
                   <User className="w-5 h-5 text-white" />
                 </button>

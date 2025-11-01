@@ -29,8 +29,8 @@ const schema = z.object({
   educationLevel: z.enum(['high-school', 'associates', 'bachelors', 'masters', 'phd', 'other']),
   skills: z.array(z.string()).min(1, 'Please add at least one skill').max(20, 'Maximum 20 skills allowed'),
   careerInterest: z.string().min(5, 'Career interest must be at least 5 characters').max(200, 'Career interest must be less than 200 characters'),
-  location: z.string().optional(),
-  experience: z.string().optional()
+  yearsOfExperience: z.coerce.number().min(0, 'Years of experience cannot be negative').max(50, 'Years of experience must be less than 50'),
+  location: z.string().optional()
 });
 
 export const Details = () => {
@@ -59,8 +59,8 @@ export const Details = () => {
       educationLevel: profile?.educationLevel || 'bachelors',
       skills: profile?.skills || [],
       careerInterest: profile?.careerInterest || '',
-      location: profile?.location || '',
-      experience: ''
+      yearsOfExperience: 0,
+      location: profile?.location || ''
     }
   });
 
@@ -122,15 +122,16 @@ export const Details = () => {
         toast.error('Failed to load career selection');
       }
     } else {
-      console.log('No selected career found, starting fresh assessment');
-    }
-    
-    // Load existing profile data if available
-    if (profile) {
-      console.log('Loading existing profile data into form');
-      if (profile.skills && profile.skills.length > 0) {
-        setSkills(profile.skills);
-        setValue('skills', profile.skills);
+      console.log('No selected career found, checking for existing profile');
+      
+      // Only load existing profile data if there's NO selected career
+      // This prevents old skills from overwriting new career skills
+      if (profile) {
+        console.log('Loading existing profile data into form');
+        if (profile.skills && profile.skills.length > 0) {
+          setSkills(profile.skills);
+          setValue('skills', profile.skills);
+        }
       }
     }
   }, [setValue, profile]);
@@ -232,7 +233,11 @@ export const Details = () => {
         careerInfo: {
           careerInterest: data.careerInterest.trim(),
           skills: skills,
-          experience: data.experience?.trim() || 'Entry Level'
+          yearsOfExperience: data.yearsOfExperience || 0,
+          experienceLevel: data.yearsOfExperience === 0 ? 'Entry Level' : 
+                          data.yearsOfExperience < 2 ? 'Junior' :
+                          data.yearsOfExperience < 5 ? 'Mid-Level' :
+                          data.yearsOfExperience < 10 ? 'Senior' : 'Expert'
         },
         selectedCareer: selectedCareer || null
       },
@@ -248,6 +253,7 @@ export const Details = () => {
       skills: skills,
       careerInterest: data.careerInterest.trim(),
       interests: [data.careerInterest.trim()],
+      yearsOfExperience: data.yearsOfExperience || 0,
       careerAssessment: assessmentData,
       selectedCareer: selectedCareer || undefined
     };
@@ -306,27 +312,20 @@ export const Details = () => {
   };
 
   return (
-    <div className="min-h-screen relative">
+    <div 
+      className="min-h-screen"
+      style={{
+        backgroundImage: "url('/bg-image.svg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed'
+      }}
+    >
       {/* Form Section */}
-      <section className="py-24 px-4 relative">
-        <GridBackgroundSmall 
-          size={24} 
-          lineColor="rgba(139, 92, 246, 0.1)" 
-          opacity={0.2}
-          className="absolute inset-0"
-        >
-          <div />
-        </GridBackgroundSmall>
-        <DotBackground 
-          size={40} 
-          dotColor="rgba(34, 197, 94, 0.08)" 
-          opacity={0.3}
-          className="absolute inset-0"
-        >
-          <div />
-        </DotBackground>
-        <div className="max-w-2xl mx-auto relative">
-          <NBCard className="border-border/50 bg-card/50 backdrop-blur-sm">
+      <section className="py-24 px-4">
+        <div className="max-w-2xl mx-auto">
+          <NBCard className="border-border/50 bg-white shadow-xl">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-3xl font-bold text-foreground mb-2">
@@ -404,7 +403,7 @@ export const Details = () => {
                   required
                 />
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormInput
                     label="Age"
                     name="age"
@@ -412,6 +411,16 @@ export const Details = () => {
                     placeholder="Enter your age"
                     register={register}
                     error={errors.age as any}
+                    required
+                  />
+                  
+                  <FormInput
+                    label="Years of Experience"
+                    name="yearsOfExperience"
+                    type="number"
+                    placeholder="0"
+                    register={register}
+                    error={errors.yearsOfExperience as any}
                     required
                   />
                   
@@ -523,14 +532,6 @@ export const Details = () => {
                   register={register}
                   error={errors.careerInterest as any}
                   required
-                />
-                
-                <FormInput
-                  label="Experience Level (Optional)"
-                  name="experience"
-                  placeholder="e.g., Entry Level, 2 years, Experienced"
-                  register={register}
-                  error={errors.experience as any}
                 />
               </div>
 

@@ -397,6 +397,7 @@ export interface AlternativeCareer {
   salary: string;
   requirements: string[];
   growth: 'very high' | 'high' | 'medium' | 'low';
+  experienceLevel?: 'entry' | 'mid' | 'senior' | 'internship';
 }
 
 // Career Service Response Types

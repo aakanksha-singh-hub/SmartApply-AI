@@ -10,7 +10,7 @@ import { LearningResourcesPage } from '@/pages/LearningResourcesPage'
 import SignIn from '@/pages/SignIn'
 import SignUp from '@/pages/SignUp'
 import Profile from '@/pages/Profile'
-import AdminDashboard from '@/pages/AdminDashboard'
+import { AdminDashboard } from '@/pages/AdminDashboard'
 import ProtectedRoute, { AdminRoute } from '@/components/ProtectedRoute'
 
 import { AchievementsPage } from '@/pages/AchievementsPage'
