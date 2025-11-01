@@ -5,7 +5,9 @@ const dotenv = require('dotenv');
 const { connectDb } = require('./db');
 const User = require('./models/User');
 const Resume = require('./models/Resume');
+const Career = require('./models/Career');
 const { hashPassword, comparePassword } = require('./utils/password');
+const { isAdmin } = require('./middleware/adminAuth');
 const profileRoutes = require('./routes/profileRoutes');
 
 dotenv.config();
@@ -59,7 +61,15 @@ app.post('/auth/register', async (req, res) => {
   const hash = await hashPassword(password);
   const user = new User({ username, passwordHash: hash });
     await user.save();
-  const token = generateToken({ id: user._id, username: user.username, accessLevel: user.accessLevel });
+
+  // Auto-promote admin user to admin role
+  if (user.username === 'admin' && user.role !== 'admin') {
+    user.role = 'admin';
+    await user.save();
+    console.log('✅ Auto-promoted admin user to admin role');
+  }
+
+  const token = generateToken({ id: user._id, username: user.username, accessLevel: user.accessLevel, role: user.role });
   res.json({ user: { id: user._id, username: user.username, accessLevel: user.accessLevel }, token });
   } catch (err) {
     console.error('Register error', err);
@@ -76,8 +86,16 @@ app.post('/auth/login', async (req, res) => {
   if (!user) return res.status(401).json({ error: 'Invalid credentials' });
   const ok = await comparePassword(password, user.passwordHash);
     if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
-  const token = generateToken({ id: user._id, username: user.username, accessLevel: user.accessLevel });
-  res.json({ user: { id: user._id, username: user.username, accessLevel: user.accessLevel }, token });
+  
+  // Auto-promote admin user to admin role (for demo setup)
+  if (user.username === 'admin' && user.role !== 'admin') {
+    user.role = 'admin';
+    await user.save();
+    console.log('✅ Auto-promoted admin user to admin role');
+  }
+  
+  const token = generateToken({ id: user._id, username: user.username, accessLevel: user.accessLevel, role: user.role });
+  res.json({ user: { id: user._id, username: user.username, accessLevel: user.accessLevel, role: user.role }, token });
   } catch (err) {
     console.error('Login error', err);
     res.status(500).json({ error: 'Internal error' });
@@ -811,6 +829,325 @@ app.post('/user/sync-progress', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error('Sync progress error:', err);
     res.status(500).json({ error: 'Failed to sync progress data' });
+  }
+});
+
+// ============================================
+// TEMPORARY ADMIN PROMOTION ENDPOINT (FOR DEMO)
+// Remove this after demo if you want!
+// ============================================
+
+/**
+ * Make yourself admin without MongoDB access
+ * POST /admin/make-me-admin
+ * Requires: Valid JWT token
+ * Returns: Updated user with admin role
+ */
+app.post('/admin/make-me-admin', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Promote user to admin
+    user.role = 'admin';
+    await user.save();
+    
+    console.log(`🎉 SUCCESS! User "${user.username}" is now an admin!`);
+    console.log(`   User ID: ${user._id}`);
+    console.log(`   New Role: ${user.role}`);
+    
+    res.json({ 
+      success: true,
+      message: '🎉 You are now an admin! Refresh the page to access the admin panel.',
+      user: { 
+        id: user._id, 
+        username: user.username, 
+        role: user.role 
+      } 
+    });
+  } catch (error) {
+    console.error('❌ Error promoting to admin:', error.message);
+    res.status(500).json({ 
+      error: 'Failed to promote to admin',
+      details: error.message 
+    });
+  }
+});
+
+// ============================================
+// ADMIN ROUTES
+// ============================================
+
+// Get all users (Admin only)
+app.get('/admin/users', authMiddleware, isAdmin, async (req, res) => {
+  try {
+    const { page = 1, limit = 20, search = '', sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+    
+    const query = search ? {
+      $or: [
+        { username: { $regex: search, $options: 'i' } },
+        { 'enhancedProfile.name': { $regex: search, $options: 'i' } },
+        { 'enhancedProfile.email': { $regex: search, $options: 'i' } },
+        { 'enhancedProfile.careerInterest': { $regex: search, $options: 'i' } }
+      ]
+    } : {};
+    
+    const sort = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
+    
+    const users = await User.find(query)
+      .select('-passwordHash')
+      .sort(sort)
+      .limit(Number(limit))
+      .skip((Number(page) - 1) * Number(limit));
+    
+    const total = await User.countDocuments(query);
+    
+    console.log(`✅ Admin fetched ${users.length} users`);
+    res.json({ 
+      users, 
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / Number(limit))
+    });
+  } catch (error) {
+    console.log('Error fetching users:', error.message);
+    res.status(500).json({ error: 'Processing request' });
+  }
+});
+
+// Get platform analytics (Admin only)
+app.get('/admin/analytics', authMiddleware, isAdmin, async (req, res) => {
+  try {
+    // Total users
+    const totalUsers = await User.countDocuments();
+    
+    // Users registered today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const usersToday = await User.countDocuments({ createdAt: { $gte: today } });
+    
+    // Users registered this week
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const usersThisWeek = await User.countDocuments({ createdAt: { $gte: weekAgo } });
+    
+    // Total resumes
+    const resumeStats = await User.aggregate([
+      { $match: { 'enhancedProfile.resumeVersions': { $exists: true, $ne: [] } } },
+      { $project: { count: { $size: '$enhancedProfile.resumeVersions' } } },
+      { $group: { _id: null, total: { $sum: '$count' } } }
+    ]);
+    const totalResumes = resumeStats[0]?.total || 0;
+    
+    // Average resume score
+    const scoreStats = await User.aggregate([
+      { $match: { 'enhancedProfile.resumeVersions': { $exists: true, $ne: [] } } },
+      { $unwind: '$enhancedProfile.resumeVersions' },
+      { $group: { _id: null, avgScore: { $avg: '$enhancedProfile.resumeVersions.score' } } }
+    ]);
+    const averageResumeScore = Math.round(scoreStats[0]?.avgScore || 0);
+    
+    // Most popular careers
+    const careerStats = await User.aggregate([
+      { $match: { 'enhancedProfile.careerInterest': { $exists: true, $ne: null } } },
+      { $group: { _id: '$enhancedProfile.careerInterest', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 10 }
+    ]);
+    
+    // User growth (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const userGrowth = await User.aggregate([
+      { $match: { createdAt: { $gte: thirtyDaysAgo } } },
+      { $group: {
+        _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+        count: { $sum: 1 }
+      }},
+      { $sort: { _id: 1 } }
+    ]);
+    
+    console.log('✅ Admin fetched analytics');
+    res.json({
+      totalUsers,
+      usersToday,
+      usersThisWeek,
+      totalResumes,
+      averageResumeScore,
+      popularCareers: careerStats.map(c => ({ name: c._id, count: c.count })),
+      userGrowth: userGrowth.map(g => ({ date: g._id, count: g.count }))
+    });
+  } catch (error) {
+    console.log('Error fetching analytics:', error.message);
+    res.status(500).json({ error: 'Processing request' });
+  }
+});
+
+// Get specific user details (Admin only)
+app.get('/admin/users/:id', authMiddleware, isAdmin, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-passwordHash');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    console.log(`✅ Admin fetched user: ${user.username}`);
+    res.json({ user });
+  } catch (error) {
+    console.log('Error fetching user:', error.message);
+    res.status(500).json({ error: 'Processing request' });
+  }
+});
+
+// Delete user (Admin only)
+app.delete('/admin/users/:id', authMiddleware, isAdmin, async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    console.log(`✅ Admin deleted user: ${user.username}`);
+    res.json({ message: 'User deleted successfully', username: user.username });
+  } catch (error) {
+    console.log('Error deleting user:', error.message);
+    res.status(500).json({ error: 'Processing request' });
+  }
+});
+
+// Update user role (Admin only)
+app.patch('/admin/users/:id/role', authMiddleware, isAdmin, async (req, res) => {
+  try {
+    const { role } = req.body;
+    
+    if (!['user', 'admin'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role. Must be "user" or "admin"' });
+    }
+    
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { role },
+      { new: true }
+    ).select('-passwordHash');
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    console.log(`✅ Admin updated user role: ${user.username} -> ${role}`);
+    res.json({ message: 'User role updated', user });
+  } catch (error) {
+    console.log('Error updating user role:', error.message);
+    res.status(500).json({ error: 'Processing request' });
+  }
+});
+
+// ============================================
+// CAREER/JOB MANAGEMENT ROUTES (Admin only)
+// ============================================
+
+// Get all careers
+app.get('/admin/careers', authMiddleware, isAdmin, async (req, res) => {
+  try {
+    const { domain, subdomain, isActive, page = 1, limit = 50 } = req.query;
+    
+    const query = {};
+    if (domain) query.domain = domain;
+    if (subdomain) query.subdomain = subdomain;
+    if (isActive !== undefined) query.isActive = isActive === 'true';
+    
+    const careers = await Career.find(query)
+      .sort({ domain: 1, subdomain: 1, title: 1 })
+      .limit(Number(limit))
+      .skip((Number(page) - 1) * Number(limit))
+      .populate('createdBy', 'username');
+    
+    const total = await Career.countDocuments(query);
+    
+    console.log(`✅ Admin fetched ${careers.length} careers`);
+    res.json({ 
+      careers, 
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / Number(limit))
+    });
+  } catch (error) {
+    console.log('Error fetching careers:', error.message);
+    res.status(500).json({ error: 'Processing request' });
+  }
+});
+
+// Create new career/job (Admin only)
+app.post('/admin/careers', authMiddleware, isAdmin, async (req, res) => {
+  try {
+    const careerData = {
+      ...req.body,
+      createdBy: req.user.id
+    };
+    
+    const career = new Career(careerData);
+    await career.save();
+    
+    console.log(`✅ Admin created career: ${career.title}`);
+    res.status(201).json({ message: 'Career created successfully', career });
+  } catch (error) {
+    console.log('Error creating career:', error.message);
+    res.status(400).json({ error: error.message || 'Processing request' });
+  }
+});
+
+// Update career (Admin only)
+app.put('/admin/careers/:id', authMiddleware, isAdmin, async (req, res) => {
+  try {
+    const career = await Career.findOneAndUpdate(
+      { id: req.params.id },
+      { ...req.body, updatedAt: Date.now() },
+      { new: true, runValidators: true }
+    );
+    
+    if (!career) {
+      return res.status(404).json({ error: 'Career not found' });
+    }
+    
+    console.log(`✅ Admin updated career: ${career.title}`);
+    res.json({ message: 'Career updated successfully', career });
+  } catch (error) {
+    console.log('Error updating career:', error.message);
+    res.status(400).json({ error: error.message || 'Processing request' });
+  }
+});
+
+// Delete career (Admin only)
+app.delete('/admin/careers/:id', authMiddleware, isAdmin, async (req, res) => {
+  try {
+    const career = await Career.findOneAndDelete({ id: req.params.id });
+    
+    if (!career) {
+      return res.status(404).json({ error: 'Career not found' });
+    }
+    
+    console.log(`✅ Admin deleted career: ${career.title}`);
+    res.json({ message: 'Career deleted successfully', title: career.title });
+  } catch (error) {
+    console.log('Error deleting career:', error.message);
+    res.status(500).json({ error: 'Processing request' });
+  }
+});
+
+// Get unique domains (for filters)
+app.get('/admin/careers/domains', authMiddleware, isAdmin, async (req, res) => {
+  try {
+    const domains = await Career.distinct('domain');
+    const subdomains = await Career.distinct('subdomain');
+    
+    res.json({ domains, subdomains });
+  } catch (error) {
+    console.log('Error fetching domains:', error.message);
+    res.status(500).json({ error: 'Processing request' });
   }
 });
 

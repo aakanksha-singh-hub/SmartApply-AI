@@ -5,6 +5,7 @@ const UserSchema = new Schema({
   username: { type: String, required: true, unique: true, index: true },
   passwordHash: { type: String, required: true },
   accessLevel: { type: String, required: true, default: 'User' },
+  role: { type: String, enum: ['user', 'admin'], default: 'user' },
   createdAt: { type: Date, default: Date.now },
   lastLoginDate: { type: Date, default: Date.now },
   

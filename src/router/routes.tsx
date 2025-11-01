@@ -10,8 +10,14 @@ import { LearningResourcesPage } from '@/pages/LearningResourcesPage'
 import SignIn from '@/pages/SignIn'
 import SignUp from '@/pages/SignUp'
 import Profile from '@/pages/Profile'
-import { AdminDashboard } from '@/pages/AdminDashboard'
-import ProtectedRoute, { AdminRoute } from '@/components/ProtectedRoute'
+import ProtectedRoute from '@/components/ProtectedRoute'
+import { AdminRoute } from '@/components/AdminRoute'
+
+// Admin Pages
+import { AdminDashboard } from '@/pages/admin/AdminDashboard'
+import { AdminUsers } from '@/pages/admin/AdminUsers'
+import { AdminCareers } from '@/pages/admin/AdminCareers'
+import { AdminAnalytics } from '@/pages/admin/AdminAnalytics'
 
 import { AchievementsPage } from '@/pages/AchievementsPage'
 import { ResumeUpload } from '@/pages/ResumeUpload'
@@ -27,7 +33,13 @@ const AppRoutes = () => {
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+      
+      {/* Admin Routes */}
       <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+      <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+      <Route path="/admin/careers" element={<AdminRoute><AdminCareers /></AdminRoute>} />
+      <Route path="/admin/analytics" element={<AdminRoute><AdminAnalytics /></AdminRoute>} />
+      
       <Route path="/details" element={<Details />} />
       <Route path="/assessment" element={<ProtectedRoute><CareerAssessment /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute requiresEnhancedProfile={true}><CareerDashboard /></ProtectedRoute>} />
