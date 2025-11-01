@@ -17,9 +17,6 @@
 - [Environment Setup](#environment-setup)
 - [Project Structure](#project-structure)
 - [Key Features](#key-features)
-- [API Documentation](#api-documentation)
-- [Deployment](#deployment)
-- [Contributing](#contributing)
 
 ---
 
