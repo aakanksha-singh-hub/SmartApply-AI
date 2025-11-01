@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { DashboardLayout } from './DashboardLayout';
 import { DashboardHeader } from './DashboardHeader';
+import { PersonalizedGreeting } from './PersonalizedGreeting';
 import { CareerRoadmapDisplay } from './CareerRoadmapDisplay';
 import { LearningResourcesSection } from './LearningResourcesSection';
 import { ProgressTrackingVisualization } from './ProgressTrackingVisualization';
@@ -208,6 +209,15 @@ export const EnhancedDashboard: React.FC<EnhancedDashboardProps> = ({ profile })
         profile={profile}
         onLogout={handleLogout}
         onSettings={handleSettings}
+      />
+
+      {/* Personalized Greeting with AI-generated insights */}
+      <PersonalizedGreeting
+        userName={profile.name || 'User'}
+        careerInterest={profile.careerInterest || 'your field'}
+        yearsOfExperience={profile.yearsOfExperience || 0}
+        completedResources={profile.learningResourcesCompleted?.length || 0}
+        overallProgress={profile.progressData?.overallProgress || 0}
       />
 
       {/* Main Dashboard Grid */}

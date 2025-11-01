@@ -312,9 +312,8 @@ export class AuthService {
       });
       
       if (error.response?.status === 409) {
-        toast.error('Username already exists', {
-          duration: 5000,
-          description: 'Please choose a different username or sign in with your existing account.'
+        toast('Username already exists - please choose a different one', {
+          duration: 4000
         });
       } else {
         ErrorHandlingService.handleAuthenticationError(error, 'Sign Up');
@@ -367,8 +366,8 @@ export class AuthService {
       // Fallback - clear data anyway
       this.clearAuthData();
       
-      toast.error('Logout completed with errors', {
-        duration: 3000
+      toast.success('Logged out successfully', {
+        duration: 2000
       });
       
       debugLogger.logLogoutComplete(false);

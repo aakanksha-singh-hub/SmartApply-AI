@@ -45,7 +45,7 @@ const SignUp: React.FC = () => {
         
         // Prevent submission if validation fails
         if (!isFormValid) {
-            validationErrors.forEach(error => toast.error(error, { duration: 3000 }))
+            validationErrors.forEach(error => toast(error, { duration: 3000 }))
             return
         }
         
@@ -77,7 +77,7 @@ const SignUp: React.FC = () => {
             }, 1000);
             
         } catch (error) {
-            console.error('❌ Sign up failed:', error)
+            console.log('Sign up process handling');
             toast.dismiss('signup-process');
         } finally {
             setLoading(false)

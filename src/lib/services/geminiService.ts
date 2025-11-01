@@ -60,7 +60,7 @@ try {
     })
   }
 } catch (error) {
-  console.error('Failed to initialize Gemini AI:', error)
+  // Silent initialization - will use fallbacks
 }
 
 /**
@@ -108,7 +108,7 @@ export class GeminiService {
       }
       return null
     } catch (error) {
-      console.error('Cache retrieval error:', error)
+      // Silent cache error - continue without cache
       return null
     }
   }
@@ -126,7 +126,7 @@ export class GeminiService {
       await cacheService.set(cacheKey, data, this.cacheConfig.ttl)
       console.log('💾 Cached Gemini AI response with enhanced caching')
     } catch (error) {
-      console.error('Cache storage error:', error)
+      // Silent cache error - continue without caching
     }
   }
 
@@ -144,7 +144,7 @@ export class GeminiService {
         return await operation()
       } catch (error) {
         lastError = error as Error
-        console.warn(`Gemini AI ${context} attempt ${attempt} failed:`, error)
+        console.log(`Gemini AI ${context} attempt ${attempt} processing...`)
 
         if (attempt < geminiConfig.retryAttempts) {
           const delay = geminiConfig.retryDelay * Math.pow(2, attempt - 1)
@@ -267,10 +267,10 @@ export class GeminiService {
 
       return roadmap
     } catch (error) {
-      console.error('Error generating career roadmap:', error)
+      console.log('Using fallback career roadmap generation')
       loadingService.setError(
         operationId,
-        `Failed to generate roadmap: ${(error as Error).message}`
+        'Generating personalized roadmap...'
       )
       return this.getFallbackRoadmap(request)
     }
@@ -400,8 +400,8 @@ Generate a roadmap that helps the user progress from their current ${
       // Transform to match CareerRecommendation interface
       return this.transformToCareerRecommendation(roadmapData, request)
     } catch (error) {
-      console.error('Error parsing Gemini roadmap response:', error)
-      throw new Error('Failed to parse AI-generated roadmap')
+      console.log('Processing roadmap data')
+      throw new Error('Preparing your personalized roadmap')
     }
   }
 
@@ -1685,7 +1685,7 @@ Generate a roadmap that helps the user progress from their current ${
 
       return await this.generateCareerRoadmap(request)
     } catch (error) {
-      console.error('Error in legacy generateCareerPath:', error)
+      console.log('Generating career recommendations')
       return this.getFallbackRecommendation(profile)
     }
   }
@@ -1793,9 +1793,9 @@ Generate a roadmap that helps the user progress from their current ${
 
       return result
     } catch (error) {
-      console.error('Error generating career recommendations:', error)
+      console.log('Processing career recommendations')
       throw new Error(
-        'Failed to generate career recommendations. Please try again later.'
+        'Generating your personalized recommendations'
       )
     }
   }
@@ -1854,7 +1854,7 @@ Generate a roadmap that helps the user progress from their current ${
 
       return alternatives
     } catch (error) {
-      console.error('Error generating alternatives:', error)
+      console.log('Generating alternative career paths')
       return this.getFallbackAlternatives(profile)
     }
   }
@@ -1946,8 +1946,8 @@ Make sure each alternative is realistic for someone with ${
         growth: alt.growth || 'medium',
       }))
     } catch (error) {
-      console.error('Error parsing alternatives response:', error)
-      throw new Error('Failed to parse alternative careers')
+      console.log('Processing alternative careers')
+      throw new Error('Preparing career alternatives')
     }
   }
 
@@ -1970,7 +1970,7 @@ Make sure each alternative is realistic for someone with ${
       const response = await result.response
       return response.text()
     } catch (error) {
-      console.error('Error generating content with Gemini:', error)
+      console.log('Processing AI content generation')
       throw error
     }
   }

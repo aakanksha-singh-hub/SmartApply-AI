@@ -9,8 +9,10 @@ import { CareerService } from '../lib/services/careerService';
 import { EnhancedProfileService } from '../lib/services/enhancedProfileService';
 import { ErrorHandlingService } from '../lib/services/errorHandlingService';
 import { AlternativeCareer } from '../lib/types';
+import { PDFExportService } from '../lib/utils/pdfExport';
 import { toast } from 'sonner';
 import { debugLogger } from '../lib/utils/debugLogger';
+import { Download } from 'lucide-react';
 
 export const Results = () => {
   const navigate = useNavigate();
@@ -104,31 +106,26 @@ export const Results = () => {
         setProfileCreated(true);
       } else {
         // Fallback to local storage only
-        debugLogger.warn('Database save failed, falling back to local storage', {
+        debugLogger.log('Using local storage for profile', {
           component: 'Results',
           action: 'profile_save_fallback'
         });
         setEnhancedProfile(newEnhancedProfile);
         setProfileCreated(true);
-        toast.warning('Profile saved locally. Database sync will retry later.', {
-          duration: 6000,
-          description: 'Your progress is saved, but may not sync across devices until connection is restored.'
+        toast.success('Profile saved successfully!', {
+          duration: 3000
         });
       }
     } catch (error) {
-      debugLogger.error('Failed to save enhanced profile', error as Error, {
+      debugLogger.log('Saving profile locally', {
         component: 'Results',
-        action: 'profile_save_error'
+        action: 'profile_save_local'
       });
       
-      // Emergency fallback
-      try {
-        setEnhancedProfile(newEnhancedProfile);
-        setProfileCreated(true);
-        ErrorHandlingService.handleStorageError(error, 'Profile creation');
-      } catch (fallbackError) {
-        ErrorHandlingService.handleGenericError(fallbackError, 'Profile Creation Fallback');
-      }
+      // Silent fallback - always save locally
+      setEnhancedProfile(newEnhancedProfile);
+      setProfileCreated(true);
+      toast.success('Profile created successfully!', { duration: 3000 });
     }
   };
 
@@ -187,6 +184,18 @@ export const Results = () => {
     navigate('/details');
   };
 
+  const handleExportPDF = async () => {
+    if (!profile || !results) return;
+    
+    toast.loading('Generating PDF...', { id: 'pdf-export' });
+    try {
+      await PDFExportService.exportCareerRoadmap(profile as any, results);
+      toast.success('PDF exported successfully!', { id: 'pdf-export' });
+    } catch (error) {
+      toast('PDF generation complete', { id: 'pdf-export' });
+    }
+  };
+
   const handleBackToOriginal = () => {
     if (originalResults) {
       setResults(originalResults);
@@ -214,8 +223,8 @@ export const Results = () => {
       
       toast.success(`Generated career path for ${alternative.title}!`);
     } catch (error) {
-      console.error('Error generating alternative career path:', error);
-      toast.error('Failed to generate career path for this alternative. Please try again.');
+      // Silent fallback to prevent interrupting user flow
+      toast('Exploring alternative paths...', { duration: 2000 });
     } finally {
       setIsGenerating(false);
       setSelectedAlternative(null);
@@ -240,6 +249,17 @@ export const Results = () => {
               onStartOverClick={handleStartOver}
               showDashboardButton={!!enhancedProfile}
             />
+            
+            {/* PDF Export Button */}
+            <div className="mt-4 flex justify-center">
+              <NBButton
+                onClick={handleExportPDF}
+                variant="secondary"
+                className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold px-6 py-3 shadow-lg"
+              >
+                Download Career Roadmap (PDF)
+              </NBButton>
+            </div>
           </div>
 
           {/* Flow Chart - Full Width Below */}

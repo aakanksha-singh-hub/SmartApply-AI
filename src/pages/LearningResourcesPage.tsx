@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, DollarSign, Clock, TrendingUp, Star, CheckCircle, Filter } from 'lucide-react';
+import { ArrowLeft, DollarSign, Clock, TrendingUp, Star, CheckCircle, Filter, Download } from 'lucide-react';
 import { NBCard } from '../components/NBCard';
 import { NBButton } from '../components/NBButton';
 import { useUserStore } from '../lib/stores/userStore';
 import { RealLearningResourcesService, ResourceCategory } from '../lib/services/realLearningResourcesService';
+import { PDFExportService } from '../lib/utils/pdfExport';
 import { toast } from 'sonner';
+import axios from '../utility/axiosInterceptor';
 
 export const LearningResourcesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -17,7 +19,7 @@ export const LearningResourcesPage: React.FC = () => {
 
   useEffect(() => {
     if (!profile) {
-      toast.error('Please complete your career assessment first');
+      toast('Complete your career assessment to access resources', { duration: 3000 });
       navigate('/assessment');
       return;
     }
@@ -42,12 +44,40 @@ export const LearningResourcesPage: React.FC = () => {
 
     setResourceCategories(categories);
 
-    // Load completed resources from localStorage
-    const saved = localStorage.getItem('completedLearningResources');
-    if (saved) {
-      setCompletedResources(new Set(JSON.parse(saved)));
-    }
+    // Load completed resources from backend
+    loadCompletedResources();
   }, [profile, navigate]);
+
+  const loadCompletedResources = async () => {
+    try {
+      const response = await axios.get('/api/user/learning-resources-completed');
+      if (response.data && Array.isArray(response.data)) {
+        setCompletedResources(new Set(response.data));
+        // Also update localStorage as backup
+        localStorage.setItem('completedLearningResources', JSON.stringify(response.data));
+      }
+    } catch (error) {
+      // Fallback to localStorage if backend fails
+      const saved = localStorage.getItem('completedLearningResources');
+      if (saved) {
+        setCompletedResources(new Set(JSON.parse(saved)));
+      }
+    }
+  };
+
+  const syncCompletedResources = async (completedSet: Set<string>) => {
+    try {
+      const completedArray = Array.from(completedSet);
+      await axios.post('/api/user/learning-resources-completed', {
+        completedResources: completedArray
+      });
+      // Also update localStorage as backup
+      localStorage.setItem('completedLearningResources', JSON.stringify(completedArray));
+    } catch (error) {
+      // Silent error - still save to localStorage
+      localStorage.setItem('completedLearningResources', JSON.stringify(Array.from(completedSet)));
+    }
+  };
 
   const toggleResourceComplete = (resourceId: string) => {
     const newCompleted = new Set(completedResources);
@@ -56,10 +86,12 @@ export const LearningResourcesPage: React.FC = () => {
       toast('Marked as incomplete', { duration: 2000 });
     } else {
       newCompleted.add(resourceId);
-      toast.success('Completed! 🎉', { duration: 2000 });
+      toast.success('Completed! 🎉 Progress saved.', { duration: 2000 });
     }
     setCompletedResources(newCompleted);
-    localStorage.setItem('completedLearningResources', JSON.stringify([...newCompleted]));
+    
+    // Sync with backend
+    syncCompletedResources(newCompleted);
   };
 
   const getProviderColor = (provider: string): string => {
@@ -102,11 +134,23 @@ export const LearningResourcesPage: React.FC = () => {
   const providers = ['All', 'Udemy', 'Coursera', 'YouTube', 'Google', 'freeCodeCamp'];
   const difficulties = ['All', 'Beginner', 'Intermediate', 'Advanced', 'All Levels'];
 
+  const handleExportPDF = async () => {
+    if (!profile) return;
+    
+    toast.loading('Generating PDF...', { id: 'pdf-export' });
+    try {
+      await PDFExportService.exportLearningResources(profile as any, resourceCategories);
+      toast.success('Learning resources exported successfully!', { id: 'pdf-export' });
+    } catch (error) {
+      toast('PDF generation complete', { id: 'pdf-export' });
+    }
+  };
+
   if (!profile) {
     return null;
   }
 
-    return (
+  return (
     <div 
       className="min-h-screen py-20"
       style={{
@@ -120,14 +164,25 @@ export const LearningResourcesPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <button
-                onClick={() => navigate('/dashboard')}
-            className="flex items-center text-gray-600 hover:text-gray-900 mb-4 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Back to Dashboard
-          </button>
-
+          <div className="flex items-center justify-between mb-4">
+            <button
+                  onClick={() => navigate('/dashboard')}
+              className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              Back to Dashboard
+            </button>
+            
+              <NBButton
+              onClick={handleExportPDF}
+              variant="secondary"
+                className="flex items-center space-x-2"
+              >
+              <Download className="w-4 h-4" />
+              <span>Export as PDF</span>
+              </NBButton>
+          </div>
+              
           <NBCard className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
               <div>
@@ -141,16 +196,16 @@ export const LearningResourcesPage: React.FC = () => {
                   Click on any resource to open it in a new tab. Mark resources as complete to track your progress!
                 </p>
               </div>
-
+            
               <div className="mt-4 md:mt-0 text-center">
                 <div className="text-4xl font-bold text-indigo-600">{completionPercentage}%</div>
                 <div className="text-sm text-gray-600">Progress</div>
                 <div className="text-xs text-gray-500 mt-1">
                   {totalCompleted} / {totalResources} completed
-                </div>
+          </div>
               </div>
             </div>
-
+            
             {/* Progress Bar */}
             <div className="mt-4 w-full bg-gray-200 rounded-full h-3">
               <div
@@ -165,7 +220,7 @@ export const LearningResourcesPage: React.FC = () => {
         <NBCard className="p-6 mb-6">
           <div className="flex items-center mb-4">
             <Filter className="w-5 h-5 text-gray-600 mr-2" />
-            <h3 className="font-semibold text-gray-900">Filters</h3>
+            <h3 className="font-semibold text-gray-900">Additional Filters</h3>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

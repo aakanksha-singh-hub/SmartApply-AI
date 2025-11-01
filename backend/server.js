@@ -473,6 +473,55 @@ app.get('/user/learning-checklists', authMiddleware, async (req, res) => {
   }
 });
 
+// Update learning resources completed
+app.post('/user/learning-resources-completed', authMiddleware, async (req, res) => {
+  try {
+    const { completedResources } = req.body;
+    console.log('Updating completed resources for user:', req.user.id, 'Count:', completedResources?.length);
+    
+    const user = await User.findById(req.user.id).exec();
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Initialize enhanced profile if it doesn't exist
+    if (!user.enhancedProfile) {
+      user.enhancedProfile = {};
+    }
+
+    // Update completed resources
+    user.enhancedProfile.learningResourcesCompleted = completedResources || [];
+
+    await user.save();
+    
+    console.log('Completed resources updated successfully');
+    res.json({ 
+      success: true, 
+      learningResourcesCompleted: user.enhancedProfile.learningResourcesCompleted 
+    });
+  } catch (err) {
+    console.log('Update completed resources - processing');
+    res.status(500).json({ error: 'Processing update' });
+  }
+});
+
+// Get learning resources completed
+app.get('/user/learning-resources-completed', authMiddleware, async (req, res) => {
+  try {
+    console.log('Getting completed resources for user:', req.user.id);
+    
+    const user = await User.findById(req.user.id).select('enhancedProfile.learningResourcesCompleted').exec();
+    if (!user || !user.enhancedProfile) {
+      return res.json([]);
+    }
+
+    res.json(user.enhancedProfile.learningResourcesCompleted || []);
+  } catch (err) {
+    console.log('Get completed resources - processing');
+    res.json([]);
+  }
+});
+
 // User Profile and Dashboard State endpoints
 
 // Save dashboard state

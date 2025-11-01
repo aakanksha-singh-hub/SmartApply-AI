@@ -30,6 +30,72 @@ export class RealLearningResourcesService {
   /**
    * Get personalized learning resources based on career and years of experience
    */
+  /**
+   * ROBUST CAREER MATCHING SYSTEM
+   * Priority-based matching to prevent ANY career from getting wrong content
+   */
+  private static getCareerResources(career: string): { resources: RealLearningResource[]; matchedBy: string } {
+    // PRIORITY 1: Exact/Specific matches (highest priority - check these FIRST)
+    const specificMatches = [
+      { keywords: ['quality engineer', 'quality assurance', 'qa engineer', 'qa tester', 'software tester'], resources: this.getQualityEngineerResources(), name: 'Quality Engineering' },
+      { keywords: ['data scientist', 'machine learning', 'ml engineer', 'ai engineer'], resources: this.getDataScienceResources(), name: 'Data Science' },
+      { keywords: ['penetration tester', 'pentester', 'ethical hacker', 'cybersecurity', 'security analyst'], resources: this.getCybersecurityResources(), name: 'Cybersecurity' },
+      { keywords: ['civil engineer', 'structural engineer', 'mechanical engineer', 'electrical engineer'], resources: this.getEngineeringResources(), name: 'Engineering' },
+      { keywords: ['surveyor', 'land surveyor', 'quantity surveyor'], resources: this.getSurveyorResources(), name: 'Surveying' },
+      { keywords: ['motion graphics', 'motion designer', 'animator', '3d artist', 'vfx artist'], resources: this.getMotionGraphicsResources(), name: 'Motion Graphics' },
+      { keywords: ['graphic designer', 'visual designer', 'brand designer'], resources: this.getGraphicDesignResources(), name: 'Graphic Design' },
+      { keywords: ['ui designer', 'ux designer', 'product designer', 'ui/ux'], resources: this.getUIUXResources(), name: 'UI/UX Design' },
+      { keywords: ['data analyst', 'business analyst', 'business intelligence'], resources: this.getDataAnalystResources(), name: 'Data Analytics' },
+      { keywords: ['product manager', 'product owner', 'program manager'], resources: this.getProductManagementResources(), name: 'Product Management' },
+    ];
+
+    // Check specific matches first
+    for (const match of specificMatches) {
+      if (match.keywords.some(keyword => career.includes(keyword))) {
+        console.log(`✅ Career Match: "${career}" → ${match.name}`);
+        return { resources: match.resources, matchedBy: match.name };
+      }
+    }
+
+    // PRIORITY 2: Broad category matches
+    const categoryMatches = [
+      { keywords: ['frontend', 'react', 'vue', 'angular', 'web developer'], resources: this.getFrontendResources(), name: 'Frontend Development' },
+      { keywords: ['backend', 'server', 'api', 'node', 'django', 'flask'], resources: this.getBackendResources(), name: 'Backend Development' },
+      { keywords: ['fullstack', 'full stack', 'full-stack'], resources: [...this.getFrontendResources(), ...this.getBackendResources()], name: 'Full Stack Development' },
+      { keywords: ['mobile', 'ios', 'android', 'react native', 'flutter'], resources: this.getMobileResources(), name: 'Mobile Development' },
+      { keywords: ['devops', 'cloud', 'aws', 'azure', 'kubernetes', 'docker'], resources: this.getDevOpsResources(), name: 'DevOps' },
+      { keywords: ['architect', 'architecture'], resources: this.getArchitectureResources(), name: 'Architecture' },
+      { keywords: ['music', 'audio', 'sound'], resources: this.getMusicAudioResources(), name: 'Music/Audio' },
+      { keywords: ['film', 'cinemat', 'director', 'video production'], resources: this.getFilmProductionResources(), name: 'Film Production' },
+      { keywords: ['photo', 'photography'], resources: this.getPhotographyResources(), name: 'Photography' },
+      { keywords: ['startup', 'founder', 'entrepreneur'], resources: this.getStartupFounderResources(), name: 'Startup/Entrepreneurship' },
+      { keywords: ['business', 'marketing', 'sales'], resources: this.getBusinessMarketingResources(), name: 'Business/Marketing' },
+      { keywords: ['doctor', 'physician', 'nurse', 'medic', 'healthcare'], resources: this.getHealthcareResources(), name: 'Healthcare' },
+      { keywords: ['construction', 'builder', 'carpenter', 'electrician', 'plumber'], resources: this.getConstructionResources(), name: 'Construction' },
+      { keywords: ['teacher', 'professor', 'educator', 'instructor'], resources: this.getEducationResources(), name: 'Education' },
+      { keywords: ['lawyer', 'attorney', 'legal', 'paralegal'], resources: this.getLegalResources(), name: 'Legal' },
+      { keywords: ['accountant', 'finance', 'financial', 'auditor', 'cpa'], resources: this.getFinanceResources(), name: 'Finance/Accounting' },
+      { keywords: ['scientist', 'researcher', 'research', 'lab'], resources: this.getScienceResearchResources(), name: 'Science/Research' },
+    ];
+
+    for (const match of categoryMatches) {
+      if (match.keywords.some(keyword => career.includes(keyword))) {
+        console.log(`✅ Career Match: "${career}" → ${match.name}`);
+        return { resources: match.resources, matchedBy: match.name };
+      }
+    }
+
+    // PRIORITY 3: Generic software/tech (only if nothing else matched)
+    if (career.includes('software') || career.includes('developer') || career.includes('programmer') || career.includes('coding')) {
+      console.log(`✅ Career Match: "${career}" → Generic Software Development`);
+      return { resources: this.getGenericSoftwareResources(), matchedBy: 'Software Development (Generic)' };
+    }
+
+    // PRIORITY 4: Professional development (absolute fallback)
+    console.warn(`⚠️ NO SPECIFIC MATCH for career: "${career}" - Using generic professional development`);
+    return { resources: this.getGenericProfessionalResources(), matchedBy: 'Generic Professional (Fallback)' };
+  }
+
   static getPersonalizedResources(
     careerInterest: string,
     yearsOfExperience: number,
@@ -38,67 +104,14 @@ export class RealLearningResourcesService {
     const experienceLevel = this.getExperienceLevel(yearsOfExperience);
     const career = careerInterest.toLowerCase();
 
-    // Get resources for the specific career
-    let resources: RealLearningResource[] = [];
+    // Get resources using the robust matching system
+    const { resources, matchedBy } = this.getCareerResources(career);
 
-    if (career.includes('frontend') || career.includes('web') || career.includes('react')) {
-      resources = this.getFrontendResources();
-    } else if (career.includes('backend') || career.includes('server') || career.includes('api')) {
-      resources = this.getBackendResources();
-    } else if (career.includes('fullstack') || career.includes('full stack') || career.includes('full-stack')) {
-      resources = [...this.getFrontendResources(), ...this.getBackendResources()];
-    } else if (career.includes('data scien') || career.includes('ml') || career.includes('machine learning')) {
-      resources = this.getDataScienceResources();
-    } else if (career.includes('security') || career.includes('penetration') || career.includes('pentester') || career.includes('ethical hack') || career.includes('cybersec')) {
-      resources = this.getCybersecurityResources();
-    } else if (career.includes('devops') || career.includes('cloud')) {
-      resources = this.getDevOpsResources();
-    } else if (career.includes('mobile') || career.includes('ios') || career.includes('android')) {
-      resources = this.getMobileResources();
-    } else if (career.includes('ui') || career.includes('ux') || (career.includes('design') && (career.includes('ui') || career.includes('ux') || career.includes('product')))) {
-      resources = this.getUIUXResources();
-    } else if (career.includes('motion') || career.includes('animation') || career.includes('3d') || career.includes('vfx') || career.includes('video edit')) {
-      resources = this.getMotionGraphicsResources();
-    } else if (career.includes('graphic') || career.includes('visual') || career.includes('illustrat') || career.includes('brand')) {
-      resources = this.getGraphicDesignResources();
-    } else if (career.includes('architect') && !career.includes('software')) {
-      resources = this.getArchitectureResources();
-    } else if (career.includes('music') || career.includes('audio') || career.includes('sound')) {
-      resources = this.getMusicAudioResources();
-    } else if (career.includes('film') || career.includes('cinemat') || career.includes('director')) {
-      resources = this.getFilmProductionResources();
-    } else if (career.includes('photo')) {
-      resources = this.getPhotographyResources();
-    } else if (career.includes('product') || career.includes('management')) {
-      resources = this.getProductManagementResources();
-    } else if (career.includes('data analy') || career.includes('business analy')) {
-      resources = this.getDataAnalystResources();
-    } else if (career.includes('startup') || career.includes('founder') || career.includes('entrepreneur')) {
-      resources = this.getStartupFounderResources();
-    } else if (career.includes('business') || career.includes('marketing') || career.includes('sales')) {
-      resources = this.getBusinessMarketingResources();
-    } else if (career.includes('software') || career.includes('developer') || career.includes('engineer') || career.includes('program')) {
-      // Software development resources
-      resources = this.getGenericSoftwareResources();
-    } else if (career.includes('doctor') || career.includes('nurse') || career.includes('medic') || career.includes('healthcare') || career.includes('physician')) {
-      resources = this.getHealthcareResources();
-    } else if (career.includes('construction') || career.includes('builder') || career.includes('carpenter') || career.includes('electrician') || career.includes('plumber')) {
-      resources = this.getConstructionResources();
-    } else if (career.includes('surveyor') || career.includes('surveying')) {
-      resources = this.getSurveyorResources();
-    } else if (career.includes('civil engineer') || career.includes('mechanical') || career.includes('electrical engineer') || career.includes('structural')) {
-      resources = this.getEngineeringResources();
-    } else if (career.includes('teacher') || career.includes('professor') || career.includes('educator') || career.includes('instructor')) {
-      resources = this.getEducationResources();
-    } else if (career.includes('lawyer') || career.includes('attorney') || career.includes('legal') || career.includes('paralegal')) {
-      resources = this.getLegalResources();
-    } else if (career.includes('accountant') || career.includes('finance') || career.includes('financial analyst') || career.includes('auditor')) {
-      resources = this.getFinanceResources();
-    } else if (career.includes('scientist') || career.includes('researcher') || career.includes('lab')) {
-      resources = this.getScienceResearchResources();
-    } else {
-      // Generic professional development
-      resources = this.getGenericProfessionalResources();
+    // Validate resources are relevant
+    const isRelevant = this.validateResourceRelevance(resources, career);
+    if (!isRelevant) {
+      console.error(`❌ VALIDATION FAILED: Resources for "${career}" don't seem relevant!`);
+      console.error(`Matched by: ${matchedBy}`);
     }
 
     // Filter and score resources based on experience level
@@ -112,6 +125,35 @@ export class RealLearningResourcesService {
 
     // Group by category
     return this.groupByCategory(scoredResources, experienceLevel);
+  }
+
+  /**
+   * Validate that resources are actually relevant to the career
+   * Prevents showing web dev content for non-web careers
+   */
+  private static validateResourceRelevance(resources: RealLearningResource[], career: string): boolean {
+    if (resources.length === 0) return false;
+
+    // Check if any resource titles/skills match the career interest
+    const webDevKeywords = ['javascript', 'react', 'html', 'css', 'web', 'frontend', 'backend'];
+    const isWebCareer = career.includes('web') || career.includes('frontend') || career.includes('backend') || career.includes('fullstack');
+    
+    // If it's NOT a web career but all resources are web dev, that's wrong
+    if (!isWebCareer) {
+      const webResourceCount = resources.filter(r => 
+        webDevKeywords.some(keyword => 
+          r.title.toLowerCase().includes(keyword) || 
+          r.skills.some(skill => skill.toLowerCase().includes(keyword))
+        )
+      ).length;
+      
+      // If more than 50% of resources are web dev for a non-web career, flag it
+      if (webResourceCount > resources.length * 0.5) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   private static getExperienceLevel(years: number): string {
@@ -1078,6 +1120,179 @@ export class RealLearningResourcesService {
         relevanceScore: 88,
         skills: ['Social Media', 'Content Marketing', 'Facebook Ads', 'Analytics'],
         experienceLevel: ['Junior', 'Mid']
+      }
+    ];
+  }
+
+  private static getQualityEngineerResources(): RealLearningResource[] {
+    return [
+      {
+        id: 'udemy-software-testing-masterclass',
+        title: 'Software Testing Masterclass - From Novice to Expert',
+        provider: 'Udemy',
+        url: 'https://www.udemy.com/course/software-testing-masterclass/',
+        description: 'Complete software testing and QA engineering course',
+        duration: '14 hours',
+        difficulty: 'All Levels',
+        cost: 12.99,
+        rating: 4.6,
+        relevanceScore: 98,
+        skills: ['Software Testing', 'QA', 'Test Automation', 'Quality Assurance'],
+        experienceLevel: ['Entry', 'Junior', 'Mid']
+      },
+      {
+        id: 'coursera-software-testing-automation',
+        title: 'Software Testing and Automation Specialization',
+        provider: 'Coursera',
+        url: 'https://www.coursera.org/specializations/software-testing-automation',
+        description: 'Learn testing fundamentals and automation from University of Minnesota',
+        duration: '4 months',
+        difficulty: 'Intermediate',
+        cost: 49,
+        rating: 4.7,
+        relevanceScore: 96,
+        skills: ['Test Automation', 'Selenium', 'JUnit', 'Quality Assurance'],
+        experienceLevel: ['Junior', 'Mid', 'Senior']
+      },
+      {
+        id: 'udemy-selenium-webdriver',
+        title: 'Selenium WebDriver with Java - Basics to Advanced',
+        provider: 'Udemy',
+        url: 'https://www.udemy.com/course/selenium-real-time-examplesinterview-questions/',
+        description: 'Master Selenium automation testing with Java',
+        duration: '43 hours',
+        difficulty: 'All Levels',
+        cost: 12.99,
+        rating: 4.5,
+        relevanceScore: 95,
+        skills: ['Selenium', 'Test Automation', 'Java', 'WebDriver'],
+        experienceLevel: ['Entry', 'Junior', 'Mid']
+      },
+      {
+        id: 'youtube-istqb-certification',
+        title: 'ISTQB Foundation Level Certification Course',
+        provider: 'YouTube',
+        url: 'https://www.youtube.com/watch?v=ZlQ0G9bqBUE',
+        description: 'Complete ISTQB certification preparation',
+        duration: '6 hours',
+        difficulty: 'Beginner',
+        cost: 0,
+        rating: 4.8,
+        relevanceScore: 94,
+        skills: ['ISTQB', 'Software Testing', 'QA Fundamentals', 'Test Planning'],
+        experienceLevel: ['Entry', 'Junior']
+      },
+      {
+        id: 'udemy-api-testing-postman',
+        title: 'Postman: The Complete Guide - REST API Testing',
+        provider: 'Udemy',
+        url: 'https://www.udemy.com/course/postman-the-complete-guide/',
+        description: 'Master API testing with Postman',
+        duration: '14 hours',
+        difficulty: 'All Levels',
+        cost: 12.99,
+        rating: 4.7,
+        relevanceScore: 93,
+        skills: ['API Testing', 'Postman', 'REST', 'Automation'],
+        experienceLevel: ['Entry', 'Junior', 'Mid']
+      },
+      {
+        id: 'coursera-agile-testing',
+        title: 'Agile Testing',
+        provider: 'Coursera',
+        url: 'https://www.coursera.org/learn/agile-testing',
+        description: 'Learn testing in Agile environments',
+        duration: '4 weeks',
+        difficulty: 'Intermediate',
+        cost: 49,
+        rating: 4.6,
+        relevanceScore: 91,
+        skills: ['Agile Testing', 'Scrum', 'Test Planning', 'Continuous Testing'],
+        experienceLevel: ['Junior', 'Mid', 'Senior']
+      },
+      {
+        id: 'udemy-cypress-automation',
+        title: 'Cypress - Modern Automation Testing from Scratch',
+        provider: 'Udemy',
+        url: 'https://www.udemy.com/course/cypress-tutorial/',
+        description: 'Learn modern end-to-end testing with Cypress',
+        duration: '15 hours',
+        difficulty: 'Intermediate',
+        cost: 12.99,
+        rating: 4.6,
+        relevanceScore: 92,
+        skills: ['Cypress', 'E2E Testing', 'JavaScript', 'Test Automation'],
+        experienceLevel: ['Junior', 'Mid']
+      },
+      {
+        id: 'youtube-jmeter-performance-testing',
+        title: 'JMeter Performance Testing Tutorial',
+        provider: 'YouTube',
+        url: 'https://www.youtube.com/watch?v=8pJD1hUHsPg',
+        description: 'Complete JMeter tutorial for performance testing',
+        duration: '4 hours',
+        difficulty: 'Intermediate',
+        cost: 0,
+        rating: 4.5,
+        relevanceScore: 89,
+        skills: ['JMeter', 'Performance Testing', 'Load Testing', 'Stress Testing'],
+        experienceLevel: ['Mid', 'Senior']
+      },
+      {
+        id: 'udemy-manual-testing',
+        title: 'Manual Testing + Agile with Real-time Project',
+        provider: 'Udemy',
+        url: 'https://www.udemy.com/course/learn-manual-testing-with-live-project/',
+        description: 'Complete manual testing course with hands-on project',
+        duration: '10 hours',
+        difficulty: 'Beginner',
+        cost: 12.99,
+        rating: 4.4,
+        relevanceScore: 90,
+        skills: ['Manual Testing', 'Test Cases', 'Bug Reporting', 'Agile'],
+        experienceLevel: ['Entry', 'Junior']
+      },
+      {
+        id: 'coursera-six-sigma-quality',
+        title: 'Six Sigma Yellow Belt Specialization',
+        provider: 'Coursera',
+        url: 'https://www.coursera.org/specializations/six-sigma-yellow-belt',
+        description: 'Learn Six Sigma quality management methodologies',
+        duration: '3 months',
+        difficulty: 'Beginner',
+        cost: 49,
+        rating: 4.7,
+        relevanceScore: 88,
+        skills: ['Six Sigma', 'Quality Management', 'Process Improvement', 'DMAIC'],
+        experienceLevel: ['Entry', 'Junior', 'Mid']
+      },
+      {
+        id: 'youtube-cucumber-bdd',
+        title: 'Cucumber BDD Framework with Selenium',
+        provider: 'YouTube',
+        url: 'https://www.youtube.com/watch?v=gVD12L_N5z0',
+        description: 'Learn Behavior-Driven Development with Cucumber',
+        duration: '3 hours',
+        difficulty: 'Intermediate',
+        cost: 0,
+        rating: 4.5,
+        relevanceScore: 87,
+        skills: ['Cucumber', 'BDD', 'Selenium', 'Gherkin'],
+        experienceLevel: ['Mid', 'Senior']
+      },
+      {
+        id: 'udemy-jenkins-cicd',
+        title: 'Learn DevOps: CI/CD with Jenkins using Pipelines',
+        provider: 'Udemy',
+        url: 'https://www.udemy.com/course/learn-devops-ci-cd-with-jenkins-using-pipelines-and-docker/',
+        description: 'Master Jenkins for continuous integration and testing',
+        duration: '11 hours',
+        difficulty: 'Intermediate',
+        cost: 12.99,
+        rating: 4.5,
+        relevanceScore: 86,
+        skills: ['Jenkins', 'CI/CD', 'DevOps', 'Automation'],
+        experienceLevel: ['Mid', 'Senior']
       }
     ];
   }

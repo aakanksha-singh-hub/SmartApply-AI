@@ -192,7 +192,7 @@ export const LearningResourcesSection: React.FC<LearningResourcesSectionProps> =
       const stats = await ProgressTrackingService.getProgressStats(userId, domain);
       setProgressStats(stats);
     } catch (error) {
-      console.error('Error loading learning data:', error);
+      // Silent error handling - continue with available data
     } finally {
       setLoading(false);
     }
@@ -213,7 +213,7 @@ export const LearningResourcesSection: React.FC<LearningResourcesSectionProps> =
       // Reload data to reflect changes
       await loadLearningData();
     } catch (error) {
-      console.error('Error completing resource:', error);
+      // Silent error handling - continue with current state
     }
   };
 

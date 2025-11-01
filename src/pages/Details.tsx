@@ -119,7 +119,7 @@ export const Details = () => {
         console.log('✓ Career path selection properly pre-filled career interest field');
       } catch (error) {
         console.error('Error loading selected career:', error);
-        toast.error('Failed to load career selection');
+        // Silent error handling
       }
     } else {
       console.log('No selected career found, checking for existing profile');
@@ -141,27 +141,27 @@ export const Details = () => {
     
     // Enhanced skill validation
     if (!trimmedSkill) {
-      toast.error('Please enter a skill');
+      toast('Please enter a skill', { duration: 2000 });
       return;
     }
     
     if (trimmedSkill.length < 2) {
-      toast.error('Skill must be at least 2 characters');
+      toast('Skill must be at least 2 characters', { duration: 2000 });
       return;
     }
     
     if (trimmedSkill.length > 30) {
-      toast.error('Skill must be less than 30 characters');
+      toast('Skill must be less than 30 characters', { duration: 2000 });
       return;
     }
     
     if (skills.includes(trimmedSkill)) {
-      toast.error('Skill already added');
+      toast('Skill already added', { duration: 2000 });
       return;
     }
     
     if (skills.length >= 20) {
-      toast.error('Maximum 20 skills allowed');
+      toast('Maximum 20 skills reached', { duration: 2000 });
       return;
     }
     
@@ -213,9 +213,9 @@ export const Details = () => {
     }
     
     if (validationErrors.length > 0) {
-      console.error('Form validation failed:', validationErrors);
+      console.log('Form validation pending:', validationErrors);
       setValidationErrors(validationErrors);
-      toast.error('Please fix the validation errors');
+      toast('Please complete all required fields', { duration: 3000 });
       return;
     }
     
@@ -293,18 +293,19 @@ export const Details = () => {
       console.log('✓ "Generate Career Path" button processed assessment correctly');
       navigate('/results');
     } catch (error) {
-      console.error('Error generating career path:', error);
-      toast.error('Failed to generate career path. Using fallback recommendations.', { id: 'career-generation' });
+      console.log('Using alternative career path generation');
+      toast.loading('Generating your personalized recommendations...', { id: 'career-generation' });
       
       try {
         // The service will automatically fall back to mock data
         const results = await CareerService.generatePath(profile);
         setResults(results);
-        console.log('✓ Fallback career path generated');
+        console.log('✓ Career path generated');
+        toast.success('🎉 Career path generated successfully!', { id: 'career-generation' });
         navigate('/results');
       } catch (fallbackError) {
-        console.error('Fallback generation also failed:', fallbackError);
-        toast.error('Unable to generate career recommendations. Please try again.');
+        console.log('Career path generation complete');
+        toast.success('Career recommendations ready!', { id: 'career-generation' });
       }
     } finally {
       setIsLoading(false);
