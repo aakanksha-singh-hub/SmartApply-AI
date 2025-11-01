@@ -10,6 +10,7 @@ import { EnhancedResumeVersion } from '../lib/types';
 import { GeminiService } from '../lib/services/geminiService';
 import { DepartmentService } from '../lib/services/departmentService';
 import { EnhancedResumeService } from '../lib/services/enhancedResumeService';
+import { AuthService } from '../lib/services/authService';
 
 export const ResumeUpload: React.FC = () => {
   const navigate = useNavigate();
@@ -216,7 +217,7 @@ Experience: 2+ years of relevant experience preferred.`;
         enhancedProfile?.careerInterest || jobTitle
       );
 
-      // Convert to feedback format
+      // Convert to feedback format - ensure all tips have explanation
       const feedback = {
         overallScore: aiAnalysis.overallScore,
         strengths: aiAnalysis.strengths,
@@ -226,7 +227,13 @@ Experience: 2+ years of relevant experience preferred.`;
         nextLevelAdvice: aiAnalysis.nextLevelAdvice,
         jobMatches: aiAnalysis.jobMatches,
         ATS: aiAnalysis.ATS,
-        toneAndStyle: aiAnalysis.toneAndStyle,
+        toneAndStyle: {
+          ...aiAnalysis.toneAndStyle,
+          tips: aiAnalysis.toneAndStyle.tips.map(tip => ({
+            ...tip,
+            explanation: tip.explanation || ''
+          }))
+        },
         content: aiAnalysis.content,
         structure: aiAnalysis.structure,
         skills: aiAnalysis.skills
@@ -236,9 +243,10 @@ Experience: 2+ years of relevant experience preferred.`;
       resumeAnalysis.status = 'completed';
 
       // Save analysis version for history tracking (with resume content)
-      if (enhancedProfile?.userId) {
+      const currentUser = AuthService.getCurrentUser();
+      if (currentUser?.id) {
         await EnhancedResumeService.saveAnalysisVersion(
-          enhancedProfile.userId,
+          currentUser.id,
           aiAnalysis,
           resumeText, // Store the actual resume content
           file.name // Store the file name
