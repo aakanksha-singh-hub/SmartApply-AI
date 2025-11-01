@@ -19,17 +19,13 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* Linting - All disabled for deployment */
+    /* Linting */
     "strict": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noFallthroughCasesInSwitch": false,
+    "noFallthroughCasesInSwitch": true,
     "noImplicitAny": false,
-    "suppressImplicitAnyIndexErrors": true,
-    "allowJs": true,
-    "checkJs": false,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": false
+    "suppressImplicitAnyIndexErrors": true
   },
   "include": ["src", "tabs.tsx"],
   "exclude": [

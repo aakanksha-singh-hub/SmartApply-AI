@@ -15,12 +15,13 @@ export default defineConfig({
   },
   build: {
     chunkSizeWarningLimit: 1500,
-    // Skip TypeScript type checking during build
-    typecheck: false,
+    // Skip type checking during build
+    target: 'esnext',
+    minify: 'esbuild',
   },
   esbuild: {
-    // Ignore TypeScript errors
-    logOverride: { 'this-is-undefined-in-esm': 'silent' }
+    // Remove TypeScript during build
+    logOverride: { 'this-is-undefined-in-esm': 'silent' },
   },
   plugins: [
     react(),
