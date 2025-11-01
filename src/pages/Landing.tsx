@@ -545,32 +545,28 @@ export const Landing = () => {
           <div className="max-w-4xl mx-auto space-y-4">
             {[
               {
-                question: "Q1. How does SmartApply AI calculate the Resume–Job Fit Score?",
-                answer: "SmartApply AI uses advanced Natural Language Processing (NLP) and embeddings to compare your resume with the job description. It looks at skills, keywords, experience, and role-specific context to generate a match score."
+                question: "How does SmartApply AI help me find the right career path?",
+                answer: "SmartApply AI uses AI-powered analysis to understand your skills, interests, and goals. Through an interactive career assessment, it matches you with personalized career recommendations from our database of 1000+ career paths across technology, healthcare, creative arts, and more. You'll get detailed roadmaps showing the exact steps to reach your career goals."
               },
               {
-                question: "Q2. Does SmartApply AI guarantee I'll get shortlisted or hired?", 
-                answer: "No. The tool provides data-driven insights to improve your resume, but final hiring decisions depend on recruiters, interviews, and company-specific factors."
+                question: "What information do I need to get started?", 
+                answer: "You can start with just your basic details, skills, and interests. For the best results, upload your resume - our AI will automatically extract your skills, experience, and education. You can also complete a career assessment to help us understand your preferences and goals better."
               },
               {
-                question: "Q3. What file formats are supported for resumes?",
-                answer: "Currently, we support PDF and DOCX formats. Other formats (like images or plain text) may be added in future updates."
+                question: "How accurate are the career recommendations?",
+                answer: "Our recommendations are powered by Google Gemini 1.5 Flash AI, which analyzes your profile against comprehensive career data. We consider your skills, experience level, education, interests, and career goals. The more information you provide, the more personalized and accurate your recommendations will be."
               },
               {
-                question: "Q4. Will SmartApply AI rewrite my resume automatically?",
-                answer: "Not directly. Instead, it highlights what to add or adjust (e.g., missing skills, keyword density) so you can make informed edits while keeping your resume authentic."
+                question: "Can I use SmartApply AI if I'm just starting my career?",
+                answer: "Absolutely! SmartApply AI is perfect for students, recent graduates, and career changers. Our platform provides detailed learning roadmaps, recommends courses from Udemy and Coursera, and shows you exactly what skills to develop and in what order. It's designed to guide you from beginner to job-ready."
               },
               {
-                question: "Q5. Is my resume data safe?",
-                answer: "Yes. Your resume and job description are only processed to generate insights — they are not stored or shared with third parties."
+                question: "Is my data secure and private?",
+                answer: "Yes, your privacy is our priority. Your resume, profile data, and career assessments are stored securely and are never shared with third parties. We use industry-standard encryption and security practices to protect your information."
               },
               {
-                question: "Q6. What makes SmartApply AI different from other resume tools?",
-                answer: "Unlike generic resume builders, SmartApply AI is focused on personalized job-fit analysis using AI embeddings and vector search — helping you apply smarter, not just faster."
-              },
-              {
-                question: "Q7. Is this tool free to use?",
-                answer: "The basic version is free. Premium features like detailed keyword analysis, tailored resume drafts, and recruiter insights may be part of a paid plan in the future."
+                question: "Is SmartApply AI free to use?",
+                answer: "Yes! SmartApply AI is completely free to use. You can create an account, complete career assessments, get personalized recommendations, access learning roadmaps, and use our resume optimization features - all at no cost. Start your career journey today!"
               }
             ].map((faq, index) => (
               <NBCard key={index} className="border-border/50 bg-card/50 backdrop-blur-sm overflow-hidden">
