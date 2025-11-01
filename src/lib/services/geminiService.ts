@@ -499,6 +499,10 @@ Generate a roadmap that helps the user progress from their current ${
                jobRoleLower.includes('plumber') || jobRoleLower.includes('contractor')) {
         domainRoadmap = fallbackRoadmaps.construction
       }
+      // SURVEYOR (very specific - construction related)
+      else if (jobRoleLower.includes('surveyor') || jobRoleLower.includes('surveying')) {
+        domainRoadmap = fallbackRoadmaps.surveyor || fallbackRoadmaps.engineering
+      }
       // ENGINEERING (non-software, check before general engineer)
       else if ((jobRoleLower.includes('engineer') && 
                 !jobRoleLower.includes('software') && 
@@ -947,6 +951,11 @@ Generate a roadmap that helps the user progress from their current ${
         relatedRoles: ['Project Manager', 'Site Supervisor', 'Civil Engineer', 'Safety Manager'],
         careerPath: this.getConstructionCareerPath(),
         alternatives: this.getConstructionAlternatives(),
+      },
+      surveyor: {
+        relatedRoles: ['Land Surveyor', 'Quantity Surveyor', 'Geospatial Surveyor', 'Site Engineer'],
+        careerPath: this.getSurveyorCareerPath(),
+        alternatives: this.getSurveyorAlternatives(),
       },
       healthcare: {
         relatedRoles: ['Registered Nurse', 'Medical Assistant', 'Healthcare Administrator', 'Physician'],
@@ -1464,6 +1473,36 @@ Generate a roadmap that helps the user progress from their current ${
       { id: 'alt2', title: 'Site Supervisor', description: 'Manage on-site operations', matchScore: 85, salary: '$55k-80k', requirements: ['Site Management', 'Safety', 'Coordination'], growth: 'medium' },
       { id: 'alt3', title: 'Civil Engineer', description: 'Design construction projects', matchScore: 88, salary: '$70k-100k', requirements: ['Civil Engineering', 'AutoCAD', 'Structural Analysis'], growth: 'high' },
       { id: 'alt4', title: 'Safety Manager', description: 'Ensure construction site safety', matchScore: 80, salary: '$60k-85k', requirements: ['Safety Management', 'OSHA', 'Risk Assessment'], growth: 'medium' },
+    ]
+  }
+
+  private static getSurveyorCareerPath(): any {
+    return {
+      nodes: [
+        { id: '1', type: 'course', title: 'Surveying Fundamentals', description: 'Learn surveying principles and mathematics', duration: '4 months', difficulty: 'intermediate', position: { x: 100, y: 100 } },
+        { id: '2', type: 'course', title: 'GIS & CAD Training', description: 'Master surveying software tools', duration: '3 months', difficulty: 'intermediate', position: { x: 300, y: 100 } },
+        { id: '3', type: 'certification', title: 'Land Surveyor License', description: 'Professional surveyor certification', position: { x: 500, y: 100 } },
+        { id: '4', type: 'internship', title: 'Surveying Assistant', description: 'Field surveying experience', duration: '6 months', position: { x: 700, y: 100 } },
+        { id: '5', type: 'job', title: 'Licensed Land Surveyor', description: 'Lead surveying projects', salary: '$55k-80k', position: { x: 900, y: 100 } },
+        { id: '6', type: 'job', title: 'Senior Surveyor / Survey Manager', description: 'Manage surveying operations', salary: '$75k-110k', position: { x: 1100, y: 100 } },
+      ],
+      edges: [
+        { id: 'e1-2', source: '1', target: '2', type: 'smoothstep', animated: true },
+        { id: 'e2-3', source: '2', target: '3', type: 'smoothstep', animated: true },
+        { id: 'e3-4', source: '3', target: '4', type: 'smoothstep', animated: true },
+        { id: 'e4-5', source: '4', target: '5', type: 'smoothstep', animated: true },
+        { id: 'e5-6', source: '5', target: '6', type: 'smoothstep', animated: true },
+      ],
+    }
+  }
+
+  private static getSurveyorAlternatives(): any[] {
+    return [
+      { id: 'alt1', title: 'Land Surveyor', description: 'Measure and map land boundaries', matchScore: 95, salary: '$55k-85k', requirements: ['Surveying', 'GPS/GNSS', 'AutoCAD', 'GIS'], growth: 'medium', experienceLevel: 'mid' },
+      { id: 'alt2', title: 'Quantity Surveyor', description: 'Manage construction project costs', matchScore: 88, salary: '$60k-90k', requirements: ['Cost Estimation', 'Project Management', 'Construction Knowledge'], growth: 'high', experienceLevel: 'mid' },
+      { id: 'alt3', title: 'Geospatial Surveyor', description: 'Create spatial data and maps', matchScore: 90, salary: '$50k-75k', requirements: ['GIS', 'Remote Sensing', 'Spatial Analysis', 'GPS'], growth: 'high', experienceLevel: 'entry' },
+      { id: 'alt4', title: 'Hydrographic Surveyor', description: 'Survey water bodies and coastlines', matchScore: 85, salary: '$55k-80k', requirements: ['Hydrography', 'Sonar', 'Mapping', 'Marine Navigation'], growth: 'medium', experienceLevel: 'mid' },
+      { id: 'alt5', title: 'Survey Manager', description: 'Oversee surveying teams and projects', matchScore: 82, salary: '$75k-110k', requirements: ['Leadership', 'Project Management', 'Surveying', 'Client Relations'], growth: 'medium', experienceLevel: 'senior' },
     ]
   }
 

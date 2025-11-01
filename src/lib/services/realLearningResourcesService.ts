@@ -84,6 +84,8 @@ export class RealLearningResourcesService {
       resources = this.getHealthcareResources();
     } else if (career.includes('construction') || career.includes('builder') || career.includes('carpenter') || career.includes('electrician') || career.includes('plumber')) {
       resources = this.getConstructionResources();
+    } else if (career.includes('surveyor') || career.includes('surveying')) {
+      resources = this.getSurveyorResources();
     } else if (career.includes('civil engineer') || career.includes('mechanical') || career.includes('electrical engineer') || career.includes('structural')) {
       resources = this.getEngineeringResources();
     } else if (career.includes('teacher') || career.includes('professor') || career.includes('educator') || career.includes('instructor')) {
@@ -1494,6 +1496,95 @@ export class RealLearningResourcesService {
         relevanceScore: 90,
         skills: ['Safety', 'OSHA Standards', 'Risk Management'],
         experienceLevel: ['Entry', 'Junior', 'Mid']
+      }
+    ];
+  }
+
+  private static getSurveyorResources(): RealLearningResource[] {
+    return [
+      {
+        id: 'youtube-surveying-fundamentals',
+        title: 'Land Surveying Fundamentals',
+        provider: 'YouTube',
+        url: 'https://www.youtube.com/watch?v=2zDNnYDX9xU',
+        description: 'Learn land surveying basics and techniques',
+        duration: '8 hours',
+        difficulty: 'Beginner',
+        cost: 0,
+        rating: 4.7,
+        relevanceScore: 98,
+        skills: ['Surveying', 'Measurement', 'Field Work'],
+        experienceLevel: ['Entry', 'Junior']
+      },
+      {
+        id: 'coursera-gis-fundamentals',
+        title: 'GIS and Spatial Data Analysis',
+        provider: 'Coursera',
+        url: 'https://www.coursera.org/specializations/gis',
+        description: 'Master GIS software for surveying',
+        duration: '4 months',
+        difficulty: 'Intermediate',
+        cost: 0,
+        rating: 4.8,
+        relevanceScore: 95,
+        skills: ['GIS', 'ArcGIS', 'Spatial Analysis', 'Mapping'],
+        experienceLevel: ['Junior', 'Mid']
+      },
+      {
+        id: 'udemy-autocad-civil3d',
+        title: 'AutoCAD Civil 3D for Surveyors',
+        provider: 'Udemy',
+        url: 'https://www.udemy.com/course/autocad-civil-3d-complete-course/',
+        description: 'Learn Civil 3D for surveying projects',
+        duration: '15 hours',
+        difficulty: 'Intermediate',
+        cost: 14.99,
+        rating: 4.7,
+        relevanceScore: 93,
+        skills: ['AutoCAD', 'Civil 3D', 'CAD', 'Design'],
+        experienceLevel: ['Junior', 'Mid']
+      },
+      {
+        id: 'youtube-gps-gnss',
+        title: 'GPS and GNSS for Surveyors',
+        provider: 'YouTube',
+        url: 'https://www.youtube.com/watch?v=bnDcEL56j9M',
+        description: 'Master GPS and GNSS technology',
+        duration: '4 hours',
+        difficulty: 'Intermediate',
+        cost: 0,
+        rating: 4.6,
+        relevanceScore: 92,
+        skills: ['GPS', 'GNSS', 'RTK', 'Positioning'],
+        experienceLevel: ['Junior', 'Mid']
+      },
+      {
+        id: 'coursera-surveying-methods',
+        title: 'Advanced Surveying Methods',
+        provider: 'Coursera',
+        url: 'https://www.coursera.org/learn/surveying',
+        description: 'Advanced surveying techniques and tools',
+        duration: '8 weeks',
+        difficulty: 'Advanced',
+        cost: 0,
+        rating: 4.9,
+        relevanceScore: 90,
+        skills: ['Surveying', 'Total Station', 'Leveling', 'Traversing'],
+        experienceLevel: ['Mid', 'Senior']
+      },
+      {
+        id: 'certification-pls',
+        title: 'Professional Land Surveyor (PLS) License Prep',
+        provider: 'Google',
+        url: 'https://www.google.com/search?q=PLS+license+preparation+courses',
+        description: 'Prepare for PLS certification exam',
+        duration: '12 weeks',
+        difficulty: 'Advanced',
+        cost: 0,
+        rating: 4.8,
+        relevanceScore: 88,
+        skills: ['Surveying Law', 'Boundary Law', 'Professional Practice'],
+        experienceLevel: ['Mid', 'Senior']
       }
     ];
   }
