@@ -10,7 +10,7 @@
 3. Settings:
    - Root Directory: `backend`
    - Build: `npm install`
-   - Start: `npm start`
+   - Start: `node server.js`
 4. Environment Variables:
    - `PORT` = `4000`
    - `JWT_SECRET` = (generate strong secret)

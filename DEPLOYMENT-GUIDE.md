@@ -76,7 +76,7 @@ MONGO_URI=mongodb+srv://adityabelgaonkar:adityabelgaonkar@cluster0.x2hfgjt.mongo
    - **Root Directory**: `backend`
    - **Environment**: `Node`
    - **Build Command**: `npm install`
-   - **Start Command**: `npm start`
+   - **Start Command**: `node server.js`
    - **Plan**: Free
 
 4. **Add Environment Variables**:
