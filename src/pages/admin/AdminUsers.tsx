@@ -77,10 +77,10 @@ export const AdminUsers = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <h1 className="text-4xl font-bold mb-2">User Management</h1>
-          <p className="text-purple-100">View and manage all registered users</p>
+      <div className="bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 border-b">
+        <div className="max-w-7xl mx-auto px-4 pt-24 pb-8">
+          <h1 className="text-4xl font-bold mb-2 text-gray-800">User Management</h1>
+          <p className="text-gray-600">View and manage all registered users</p>
         </div>
       </div>
 
@@ -105,7 +105,7 @@ export const AdminUsers = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 pt-16 pb-8">
         {/* Search and Stats */}
         <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center space-x-2">

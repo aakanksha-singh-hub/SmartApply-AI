@@ -23,8 +23,8 @@ export const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
   };
   
   useEffect(() => {
-    // Check if user is authenticated
-    const token = localStorage.getItem('token');
+    // Check if user is authenticated - AuthService uses 'jwt' key, not 'token'
+    const token = localStorage.getItem('jwt') || localStorage.getItem('token');
     if (!token) {
       toast.error('Please sign in to access admin panel');
       setIsChecking(false);
@@ -57,8 +57,8 @@ export const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
     );
   }
 
-  // Check authentication
-  const token = localStorage.getItem('token');
+  // Check authentication - AuthService uses 'jwt' key, not 'token'
+  const token = localStorage.getItem('jwt') || localStorage.getItem('token');
   if (!token) {
     return <Navigate to="/signin" replace />;
   }

@@ -31,10 +31,10 @@ export const AdminAnalytics = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <h1 className="text-4xl font-bold mb-2">Analytics Dashboard</h1>
-          <p className="text-purple-100">Platform statistics and insights</p>
+      <div className="bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 border-b">
+        <div className="max-w-7xl mx-auto px-4 pt-24 pb-8">
+          <h1 className="text-4xl font-bold mb-2 text-gray-800">Analytics Dashboard</h1>
+          <p className="text-gray-600">Platform statistics and insights</p>
         </div>
       </div>
 
@@ -59,7 +59,7 @@ export const AdminAnalytics = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 pt-16 pb-8">
         {loading ? (
           <div className="text-center py-12">
             <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>

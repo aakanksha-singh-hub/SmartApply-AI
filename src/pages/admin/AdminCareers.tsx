@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 import { AdminService } from '../../lib/services/adminService';
 import { NBCard } from '../../components/NBCard';
 import { NBButton } from '../../components/NBButton';
-import { Briefcase, Plus, Edit, Trash2, X } from 'lucide-react';
+import { Briefcase, Plus, Edit, Trash2, X, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { UNIVERSAL_CAREER_TAXONOMY } from '../../lib/data/universalCareerTaxonomy';
 
 export const AdminCareers = () => {
   const [careers, setCareers] = useState<any[]>([]);
@@ -34,10 +35,61 @@ export const AdminCareers = () => {
   const loadCareers = async () => {
     setLoading(true);
     try {
-      const data = await AdminService.getAllCareers({ limit: 100 });
-      setCareers(data.careers);
+      // Load from frontend taxonomy FIRST (primary source - 1000+ careers)
+      const taxonomyCareers: any[] = [];
+      
+      UNIVERSAL_CAREER_TAXONOMY.forEach((domain) => {
+        domain.subdomains.forEach((subdomain) => {
+          subdomain.roles.forEach((role) => {
+            // Parse salary from string like "$70k - $120k"
+            const salaryMatch = role.averageSalary.match(/\$(\d+)k?\s*-\s*\$(\d+)k?/i);
+            const minSalary = salaryMatch ? parseInt(salaryMatch[1]) * 1000 : 0;
+            const maxSalary = salaryMatch ? parseInt(salaryMatch[2]) * 1000 : 0;
+            
+            taxonomyCareers.push({
+              _id: role.id, // Use id as _id for React key
+              id: role.id,
+              title: role.title,
+              domain: domain.name,
+              subdomain: subdomain.name,
+              description: role.description,
+              salary: { min: minSalary, max: maxSalary, currency: 'USD' },
+              growth: role.growthOutlook,
+              skills: role.keySkills || [],
+              experienceLevels: role.experienceLevel ? [role.experienceLevel] : [],
+              education: role.educationLevel ? [role.educationLevel] : [],
+              responsibilities: [],
+              certifications: [],
+              isActive: true,
+              fromTaxonomy: true // Mark as from taxonomy
+            });
+          });
+        });
+      });
+      
+      // Also try to load manually added/edited careers from backend
+      try {
+        const data = await AdminService.getAllCareers({ limit: 1000 });
+        const manualCareers = (data.careers || []).map((c: any) => ({
+          ...c,
+          fromTaxonomy: false // Mark as manually added
+        }));
+        
+        // Merge: taxonomy careers + manually added (manual override taxonomy if same ID)
+        const careerMap = new Map(taxonomyCareers.map(c => [c.id, c]));
+        manualCareers.forEach((manual: any) => {
+          careerMap.set(manual.id, manual); // Manual overrides taxonomy
+        });
+        
+        setCareers(Array.from(careerMap.values()));
+      } catch (error) {
+        // If backend fails, just use taxonomy
+        console.log('Backend careers load failed, using taxonomy only');
+        setCareers(taxonomyCareers);
+      }
     } catch (error) {
       toast.error('Failed to load careers');
+      setCareers([]);
     } finally {
       setLoading(false);
     }
@@ -121,13 +173,69 @@ export const AdminCareers = () => {
     setFormData({ ...formData, [field]: items });
   };
 
+  const handleImportFromTaxonomy = async () => {
+    if (!confirm('This will import ALL 1000+ careers from the taxonomy. This may take a minute. Continue?')) {
+      return;
+    }
+
+    try {
+      toast.loading('Importing careers from taxonomy...', { id: 'import' });
+      
+      // Convert taxonomy format to Career model format
+      const careersToImport: any[] = [];
+      
+      UNIVERSAL_CAREER_TAXONOMY.forEach((domain) => {
+        domain.subdomains.forEach((subdomain) => {
+          subdomain.roles.forEach((role) => {
+            // Parse salary from string like "$70k - $120k"
+            const salaryMatch = role.averageSalary.match(/\$(\d+)k?\s*-\s*\$(\d+)k?/i);
+            const minSalary = salaryMatch ? parseInt(salaryMatch[1]) * 1000 : 0;
+            const maxSalary = salaryMatch ? parseInt(salaryMatch[2]) * 1000 : 0;
+            
+            // Parse growth from string like "High (22% growth)"
+            const growthMatch = role.growthOutlook.match(/(\d+)%/);
+            const growth = growthMatch ? `${role.growthOutlook}` : role.growthOutlook;
+            
+            careersToImport.push({
+              id: role.id,
+              title: role.title,
+              domain: domain.name,
+              subdomain: subdomain.name,
+              description: role.description,
+              salary: { min: minSalary, max: maxSalary, currency: 'USD' },
+              growth: growth,
+              skills: role.keySkills || [],
+              experienceLevels: role.experienceLevel ? [role.experienceLevel] : [],
+              education: role.educationLevel ? [role.educationLevel] : [],
+              responsibilities: [],
+              certifications: [],
+              isActive: true
+            });
+          });
+        });
+      });
+
+      const result = await AdminService.importCareersFromTaxonomy(careersToImport);
+      
+      toast.success(
+        `✅ Imported ${result.imported} careers! ${result.skipped} already existed.`,
+        { id: 'import' }
+      );
+      
+      // Reload careers
+      loadCareers();
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Failed to import careers', { id: 'import' });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <h1 className="text-4xl font-bold mb-2">Job Management</h1>
-          <p className="text-purple-100">Add, edit, and manage career opportunities</p>
+      <div className="bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 border-b">
+        <div className="max-w-7xl mx-auto px-4 pt-24 pb-8">
+          <h1 className="text-4xl font-bold mb-2 text-gray-800">Job Management</h1>
+          <p className="text-gray-600">Add, edit, and manage career opportunities</p>
         </div>
       </div>
 
@@ -152,7 +260,7 @@ export const AdminCareers = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 pt-16 pb-8">
         {/* Header with Add Button */}
         <div className="mb-6 flex justify-between items-center">
           <div className="flex items-center space-x-2">
@@ -161,16 +269,17 @@ export const AdminCareers = () => {
               {careers.length} Career Paths
             </span>
           </div>
-          <NBButton
-            onClick={() => {
-              resetForm();
-              setShowModal(true);
-            }}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none hover:from-purple-600 hover:to-pink-600"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add New Career
-          </NBButton>
+           <div className="flex space-x-3">
+             <NBButton
+               onClick={() => {
+                 resetForm();
+                 setShowModal(true);
+               }}
+               className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none hover:from-purple-600 hover:to-pink-600"
+             >
+               Add New Career
+             </NBButton>
+           </div>
         </div>
 
         {/* Careers Grid */}
@@ -179,12 +288,11 @@ export const AdminCareers = () => {
             <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-muted-foreground">Loading careers...</p>
           </div>
-        ) : careers.length === 0 ? (
-          <NBCard className="p-12 text-center">
-            <Briefcase className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground mb-4">No careers added yet</p>
-            <NBButton onClick={() => setShowModal(true)}>Add First Career</NBButton>
-          </NBCard>
+         ) : careers.length === 0 ? (
+           <NBCard className="p-12 text-center">
+             <Briefcase className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+             <p className="text-muted-foreground mb-4">Loading careers...</p>
+           </NBCard>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {careers.map((career) => (
@@ -219,23 +327,32 @@ export const AdminCareers = () => {
                       {career.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
-                  <div className="flex space-x-2">
-                    <NBButton
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => handleEdit(career)}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </NBButton>
-                    <NBButton
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => handleDelete(career.id, career.title)}
-                      className="text-red-600 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </NBButton>
-                  </div>
+                   <div className="flex space-x-2">
+                     {!career.fromTaxonomy && (
+                       <>
+                         <NBButton
+                           size="sm"
+                           variant="secondary"
+                           onClick={() => handleEdit(career)}
+                         >
+                           <Edit className="w-4 h-4" />
+                         </NBButton>
+                         <NBButton
+                           size="sm"
+                           variant="secondary"
+                           onClick={() => handleDelete(career.id, career.title)}
+                           className="text-red-600 hover:bg-red-50"
+                         >
+                           <Trash2 className="w-4 h-4" />
+                         </NBButton>
+                       </>
+                     )}
+                     {career.fromTaxonomy && (
+                       <span className="text-xs text-blue-600 px-2 py-1 bg-blue-50 rounded">
+                         From Taxonomy
+                       </span>
+                     )}
+                   </div>
                 </div>
               </NBCard>
             ))}

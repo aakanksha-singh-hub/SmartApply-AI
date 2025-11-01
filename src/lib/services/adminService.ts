@@ -2,9 +2,9 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
-// Get auth token
+// Get auth token - AuthService uses 'jwt' key, not 'token'
 const getAuthHeader = () => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('jwt') || localStorage.getItem('token');
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
@@ -103,6 +103,16 @@ export class AdminService {
     const response = await axios.get(`${API_URL}/api/admin/careers/domains`, {
       headers: getAuthHeader()
     });
+    return response.data;
+  }
+
+  // Import all careers from frontend taxonomy
+  static async importCareersFromTaxonomy(careers: any[]) {
+    const response = await axios.post(
+      `${API_URL}/api/admin/careers/import-from-taxonomy`,
+      { careers },
+      { headers: getAuthHeader() }
+    );
     return response.data;
   }
 }

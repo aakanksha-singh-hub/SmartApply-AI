@@ -59,8 +59,17 @@ const SignIn: React.FC = () => {
                 return; // Error handling is done in AuthService
             }
             
+            // Check if user is admin IMMEDIATELY from the login result
+            if (result.user?.role === 'admin') {
+                console.log('✅ ADMIN DETECTED from login response! Redirecting to /admin');
+                debugLogger.logNavigation(window.location.pathname, '/admin', 'Admin user detected');
+                navigate('/admin');
+                return;
+            }
+            
             // Fetch enhanced profile from database after authentication
             const checkEnhancedProfile = async () => {
+                
                 debugLogger.log('Enhanced profile detection process started', {
                     component: 'SignIn',
                     action: 'profile_detection_start'

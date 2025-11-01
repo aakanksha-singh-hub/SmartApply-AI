@@ -39,10 +39,10 @@ export const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <h1 className="text-4xl font-bold mb-2">Admin Dashboard</h1>
-          <p className="text-purple-100">SmartApply AI Management Panel</p>
+      <div className="bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 border-b">
+        <div className="max-w-7xl mx-auto px-4 pt-24 pb-8">
+          <h1 className="text-4xl font-bold mb-2 text-gray-800">Admin Dashboard</h1>
+          <p className="text-gray-600">SmartApply AI Management Panel</p>
         </div>
       </div>
 
@@ -67,9 +67,9 @@ export const AdminDashboard = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 pt-16 pb-8">
         {/* Stats Cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
           <NBCard className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
             <div className="flex items-center justify-between mb-4">
               <Users className="w-10 h-10 text-purple-600" />
@@ -123,7 +123,6 @@ export const AdminDashboard = () => {
           <NBCard className="p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-foreground">Popular Careers</h2>
-              <BarChart className="w-5 h-5 text-muted-foreground" />
             </div>
             <div className="space-y-4">
               {analytics?.popularCareers?.slice(0, 5).map((career: any, index: number) => (
@@ -149,24 +148,20 @@ export const AdminDashboard = () => {
           <NBCard className="p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-foreground">Quick Actions</h2>
-              <Calendar className="w-5 h-5 text-muted-foreground" />
             </div>
             <div className="space-y-3">
               <Link to="/admin/users">
                 <NBButton className="w-full bg-gradient-to-r from-purple-500 to-purple-700 text-white border-none hover:from-purple-600 hover:to-purple-800">
-                  <Users className="w-4 h-4 mr-2" />
                   Manage Users
                 </NBButton>
               </Link>
               <Link to="/admin/careers">
                 <NBButton className="w-full bg-gradient-to-r from-pink-500 to-pink-700 text-white border-none hover:from-pink-600 hover:to-pink-800">
-                  <Briefcase className="w-4 h-4 mr-2" />
                   Manage Careers/Jobs
                 </NBButton>
               </Link>
               <Link to="/admin/analytics">
                 <NBButton className="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white border-none hover:from-blue-600 hover:to-blue-800">
-                  <BarChart className="w-4 h-4 mr-2" />
                   View Analytics
                 </NBButton>
               </Link>

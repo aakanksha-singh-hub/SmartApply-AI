@@ -1151,6 +1151,68 @@ app.get('/admin/careers/domains', authMiddleware, isAdmin, async (req, res) => {
   }
 });
 
+// Import all careers from frontend taxonomy (Admin only) - ONE TIME SYNC
+app.post('/admin/careers/import-from-taxonomy', authMiddleware, isAdmin, async (req, res) => {
+  try {
+    const { careers } = req.body; // Expect array of careers from frontend
+    
+    if (!careers || !Array.isArray(careers)) {
+      return res.status(400).json({ error: 'Invalid careers data' });
+    }
+    
+    let imported = 0;
+    let skipped = 0;
+    let errors = 0;
+    
+    for (const career of careers) {
+      try {
+        // Check if career already exists
+        const existing = await Career.findOne({ id: career.id });
+        if (existing) {
+          skipped++;
+          continue;
+        }
+        
+        // Create new career
+        const careerDoc = new Career({
+          id: career.id,
+          title: career.title,
+          domain: career.domain,
+          subdomain: career.subdomain,
+          description: career.description || '',
+          salary: career.salary || { min: 0, max: 0, currency: 'USD' },
+          growth: career.growth || '',
+          skills: career.skills || [],
+          experienceLevels: career.experienceLevels || [],
+          education: career.education || [],
+          responsibilities: career.responsibilities || [],
+          certifications: career.certifications || [],
+          isActive: career.isActive !== false,
+          createdBy: req.user.id
+        });
+        
+        await careerDoc.save();
+        imported++;
+      } catch (error) {
+        console.error(`Error importing career ${career.id}:`, error.message);
+        errors++;
+      }
+    }
+    
+    console.log(`✅ Career import complete: ${imported} imported, ${skipped} skipped, ${errors} errors`);
+    res.json({ 
+      message: 'Careers imported successfully',
+      imported,
+      skipped,
+      errors,
+      total: careers.length
+    });
+  } catch (error) {
+    console.log('Error importing careers:', error.message);
+    res.status(500).json({ error: 'Processing request' });
+  }
+});
+
 connectDb().then(() => {
   app.listen(PORT, () => {
     console.log(`SmartApply backend listening on http://localhost:${PORT}`);
