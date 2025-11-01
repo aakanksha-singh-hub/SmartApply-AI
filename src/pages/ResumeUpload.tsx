@@ -4,11 +4,12 @@ import { useUserStore } from '../lib/stores/userStore';
 import { FileUploader } from '../components/resume/FileUploader';
 import { NBButton } from '../components/NBButton';
 import { NBCard } from '../components/NBCard';
-import { ArrowLeft, Upload, Loader2, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { EnhancedResumeVersion } from '../lib/types';
 import { GeminiService } from '../lib/services/geminiService';
 import { DepartmentService } from '../lib/services/departmentService';
+import { EnhancedResumeService } from '../lib/services/enhancedResumeService';
 
 export const ResumeUpload: React.FC = () => {
   const navigate = useNavigate();
@@ -40,6 +41,25 @@ export const ResumeUpload: React.FC = () => {
     }
   }, [enhancedProfile, navigate]);
 
+  const extractTextFromFile = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = async (event) => {
+        try {
+          const text = event.target?.result as string;
+          // Basic text extraction - in production, use a proper PDF parser like pdf-parse
+          resolve(text || 'Resume content');
+        } catch (error) {
+          reject(error);
+        }
+      };
+      
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsText(file);
+    });
+  };
+
   const generateJobDescription = async (jobTitle: string): Promise<string> => {
     try {
       const prompt = `Generate a comprehensive, industry-standard job description for a ${jobTitle} position. 
@@ -56,7 +76,7 @@ Make it realistic and based on current industry standards. Format it as a profes
       const response = await GeminiService.generateContent(prompt);
       return response;
     } catch (error) {
-      console.error('Error generating job description:', error);
+      console.log('Using fallback job description');
       return `Job Description for ${jobTitle}
 
 We are seeking a talented ${jobTitle} to join our dynamic team. The ideal candidate will have strong technical skills and experience in relevant technologies.
@@ -178,75 +198,52 @@ Experience: 2+ years of relevant experience preferred.`;
         status: 'analyzing'
       };
 
-      setStatusText('Analyzing resume content...');
+      setStatusText('Extracting text from resume...');
+      
+      // Extract text from PDF (using FileReader for basic text extraction)
+      const resumeText = await extractTextFromFile(file);
+      
+      resumeAnalysis.resumeData.extractedText = resumeText;
 
-      // Simulate AI analysis (replace with actual AI service call)
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      setStatusText('Analyzing resume with AI...');
 
-      // Mock feedback (replace with actual AI analysis)
-      const mockFeedback = {
-        overallScore: Math.floor(Math.random() * 30) + 70, // 70-100
-        ATS: {
-          score: Math.floor(Math.random() * 20) + 75,
-          tips: [
-            { type: "good" as const, tip: "Good use of industry keywords" },
-            { type: "improve" as const, tip: "Add more quantifiable achievements" }
-          ]
-        },
-        toneAndStyle: {
-          score: Math.floor(Math.random() * 25) + 70,
-          tips: [
-            {
-              type: "good" as const,
-              tip: "Professional tone maintained",
-              explanation: "Your resume maintains a professional and confident tone throughout."
-            },
-            {
-              type: "improve" as const,
-              tip: "Use stronger action verbs",
-              explanation: "Replace weak verbs like 'responsible for' with stronger alternatives like 'managed', 'led', or 'implemented'."
-            }
-          ]
-        },
-        content: {
-          score: Math.floor(Math.random() * 25) + 65,
-          tips: [
-            {
-              type: "good" as const,
-              tip: "Relevant experience highlighted",
-              explanation: "Your work experience aligns well with the target role."
-            },
-            {
-              type: "improve" as const,
-              tip: "Add more quantified results",
-              explanation: "Include specific numbers, percentages, or metrics to demonstrate your impact."
-            }
-          ]
-        },
-        structure: {
-          score: Math.floor(Math.random() * 20) + 75,
-          tips: [
-            {
-              type: "good" as const,
-              tip: "Clear section organization",
-              explanation: "Your resume sections are well-organized and easy to follow."
-            }
-          ]
-        },
-        skills: {
-          score: Math.floor(Math.random() * 25) + 70,
-          tips: [
-            {
-              type: "improve" as const,
-              tip: "Include more technical skills",
-              explanation: "Add specific technical skills mentioned in the job description."
-            }
-          ]
-        }
+      // Use Enhanced Resume Service for real AI analysis
+      const aiAnalysis = await EnhancedResumeService.analyzeResume(
+        resumeText,
+        jobDescription,
+        jobTitle,
+        enhancedProfile?.skills?.map(s => s.name) || [],
+        enhancedProfile?.careerInterest || jobTitle
+      );
+
+      // Convert to feedback format
+      const feedback = {
+        overallScore: aiAnalysis.overallScore,
+        strengths: aiAnalysis.strengths,
+        weaknesses: aiAnalysis.weaknesses,
+        missingSkills: aiAnalysis.missingSkills,
+        matchedSkills: aiAnalysis.matchedSkills,
+        nextLevelAdvice: aiAnalysis.nextLevelAdvice,
+        jobMatches: aiAnalysis.jobMatches,
+        ATS: aiAnalysis.ATS,
+        toneAndStyle: aiAnalysis.toneAndStyle,
+        content: aiAnalysis.content,
+        structure: aiAnalysis.structure,
+        skills: aiAnalysis.skills
       };
 
-      resumeAnalysis.feedback = mockFeedback;
+      resumeAnalysis.feedback = feedback;
       resumeAnalysis.status = 'completed';
+
+      // Save analysis version for history tracking (with resume content)
+      if (enhancedProfile?.userId) {
+        await EnhancedResumeService.saveAnalysisVersion(
+          enhancedProfile.userId,
+          aiAnalysis,
+          resumeText, // Store the actual resume content
+          file.name // Store the file name
+        );
+      }
 
       // Update user profile with resume analysis
       const currentProfile = enhancedProfile || {
@@ -345,30 +342,15 @@ Experience: 2+ years of relevant experience preferred.`;
                       </span>
                     )}
                   </label>
-                  <div className="relative">
-                    <select
-                      id="jobTitle"
-                      name="jobTitle"
-                      value={selectedJobRole}
-                      onChange={(e) => handleJobRoleChange(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent appearance-none bg-white"
-                      required
-                    >
-                      <option value="">Select a job role</option>
-                      {availableJobs.map((job) => (
-                        <option key={job.id} value={job.title}>
-                          {job.title}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                  </div>
                   <input
                     type="text"
-                    placeholder="Or type a custom job title"
+                    id="jobTitle"
+                    name="jobTitle"
+                    placeholder="e.g., Software Developer, Product Manager"
                     value={selectedJobRole}
-                    onChange={(e) => setSelectedJobRole(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent mt-2"
+                    onChange={(e) => handleJobRoleChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    required
                   />
                 </div>
               </div>
@@ -420,10 +402,8 @@ Experience: 2+ years of relevant experience preferred.`;
                 <NBButton
                   type="submit"
                   disabled={!file}
-                  className="flex items-center space-x-2"
                 >
-                  <Upload className="w-4 h-4" />
-                  <span>Analyze Resume</span>
+                  Analyze Resume
                 </NBButton>
               </div>
             </form>

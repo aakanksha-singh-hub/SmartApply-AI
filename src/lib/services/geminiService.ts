@@ -37,7 +37,7 @@ interface GeminiCacheConfig {
 // Enhanced Gemini AI Configuration
 const geminiConfig: GeminiConfig = {
   apiKey: config.geminiApiKey,
-  model: 'gemini-1.5-flash',
+  model: 'gemini-2.5-flash',
   cacheEnabled: true,
   maxTokens: 8192,
   timeout: 30000, // 30 seconds

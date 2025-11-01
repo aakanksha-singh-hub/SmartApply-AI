@@ -110,6 +110,115 @@ app.get('/resume', authMiddleware, async (req, res) => {
   res.json({ resumes: list });
 });
 
+// Resume Analysis History endpoints
+app.post('/user/resume-analysis-history', authMiddleware, async (req, res) => {
+  try {
+    const { analysisData } = req.body;
+    
+    // Find user and add to analysis history
+    const user = await User.findById(req.user.id).exec();
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Initialize analysis history if not exists
+    if (!user.enhancedProfile) {
+      user.enhancedProfile = {};
+    }
+    if (!user.enhancedProfile.resumeAnalysisHistory) {
+      user.enhancedProfile.resumeAnalysisHistory = [];
+    }
+
+    // Add new analysis to history
+    user.enhancedProfile.resumeAnalysisHistory.push({
+      ...analysisData,
+      createdAt: new Date()
+    });
+
+    // Keep only last 10 analyses
+    if (user.enhancedProfile.resumeAnalysisHistory.length > 10) {
+      user.enhancedProfile.resumeAnalysisHistory = user.enhancedProfile.resumeAnalysisHistory.slice(-10);
+    }
+
+    await user.save();
+    res.json({ success: true, history: user.enhancedProfile.resumeAnalysisHistory });
+  } catch (error) {
+    console.log('Error saving resume analysis history');
+    res.status(500).json({ error: 'Processing save' });
+  }
+});
+
+app.get('/user/resume-analysis-history', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).exec();
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const history = user.enhancedProfile?.resumeAnalysisHistory || [];
+    res.json({ history });
+  } catch (error) {
+    console.log('Error retrieving resume analysis history');
+    res.status(500).json({ error: 'Processing retrieval' });
+  }
+});
+
+// Resume Version Storage endpoints
+// Save a resume version with content
+app.post('/user/resume-version', authMiddleware, async (req, res) => {
+  try {
+    const { version } = req.body;
+    
+    const user = await User.findById(req.user.id).exec();
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Initialize resume versions if not exists
+    if (!user.enhancedProfile) {
+      user.enhancedProfile = {};
+    }
+    if (!user.enhancedProfile.resumeVersions) {
+      user.enhancedProfile.resumeVersions = [];
+    }
+
+    // Add new version to history
+    user.enhancedProfile.resumeVersions.push({
+      ...version,
+      savedAt: new Date()
+    });
+
+    // Keep only last 20 versions
+    if (user.enhancedProfile.resumeVersions.length > 20) {
+      user.enhancedProfile.resumeVersions = user.enhancedProfile.resumeVersions.slice(-20);
+    }
+
+    await user.save();
+    console.log(`✅ Resume version saved for user ${req.user.id}`);
+    res.json({ success: true, versions: user.enhancedProfile.resumeVersions });
+  } catch (error) {
+    console.log('Error saving resume version:', error.message);
+    res.status(500).json({ error: 'Processing save' });
+  }
+});
+
+// Get all resume versions
+app.get('/user/resume-versions', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).exec();
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const versions = user.enhancedProfile?.resumeVersions || [];
+    console.log(`✅ Retrieved ${versions.length} resume versions for user ${req.user.id}`);
+    res.json({ versions });
+  } catch (error) {
+    console.log('Error retrieving resume versions');
+    res.status(500).json({ error: 'Processing retrieval' });
+  }
+});
+
 // Enhanced Profile endpoints
 // Save enhanced profile
 app.post('/user/enhanced-profile', authMiddleware, async (req, res) => {

@@ -60,6 +60,7 @@ const UserSchema = new Schema({
     
     // Resume Analysis
     resumeVersions: [Schema.Types.Mixed],
+    resumeAnalysisHistory: [Schema.Types.Mixed],
     
     // Progress Tracking
     progressData: {

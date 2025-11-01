@@ -10,7 +10,7 @@ import { config } from '../config';
 
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(config.geminiApiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 export interface RoadmapGenerationOptions {
   timeframe: 'aggressive' | 'moderate' | 'relaxed'; // 3-6 months | 6-12 months | 12+ months
