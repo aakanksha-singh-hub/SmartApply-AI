@@ -1,5 +1,5 @@
 // Custom build script that skips TypeScript checking
-const { execSync } = require('child_process');
+import { execSync } from 'child_process';
 
 console.log('🚀 Building with Vite (skipping TypeScript checking)...');
 try {
